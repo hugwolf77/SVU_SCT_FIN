@@ -6,13 +6,31 @@ by Augstine_Kim (Kim Eui Cheol)
 '/ 
 
 object Data
-object Model
-object Document
+object Model_list
+ Model_list : VAR(Vector AutoRegression)
+object Document_list
+ Document_list :  Vector_AutoRegression
+
+package Model {
+    package VAR {
+        object VAR_ex.ipynb
+            VAR_ex.ipynb : use statsmodels
+    }
+}
+
+package Document {
+    object Vector_AutoRegression
+
+}
+
+
+Model_list --> VAR
+Document_list --> Vector_AutoRegression
 
 map "Repo_Map" as unit  {
-    Data_management *-> Data
-    Model_management *-> Model
-    Document_management *-> Document
+    Document_list *-> Document_list
+    Data_management *---> Data
+    Model_list *---> Model_list
 }
 
 
