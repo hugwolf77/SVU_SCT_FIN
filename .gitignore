@@ -5,3 +5,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# source code analysis dir
+
+__code_analy__/
