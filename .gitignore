@@ -1,0 +1,7 @@
+
+# 2023.04.26
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class

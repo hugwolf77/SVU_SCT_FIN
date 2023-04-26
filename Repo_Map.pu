@@ -1,0 +1,19 @@
+@startuml Repo_Map
+/' 
+2023.04.26
+start alpha ver 0.1
+by Augstine_Kim (Kim Eui Cheol)
+'/ 
+
+object Data
+object Model
+object Document
+
+map "Repo_Map" as unit  {
+    Data_management *-> Data
+    Model_management *-> Model
+    Document_management *-> Document
+}
+
+
+@enduml
