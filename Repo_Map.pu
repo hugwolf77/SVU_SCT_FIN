@@ -8,6 +8,7 @@ by Augstine_Kim (Kim Eui Cheol)
 object Data
 object Model_list
  Model_list : VAR(Vector AutoRegression)
+ Model_list : SVAR(Vector AutoRegression)
 object Document_list
  Document_list :  Vector_AutoRegression
 
@@ -15,6 +16,10 @@ package Model {
     package VAR {
         object VAR_ex.ipynb
             VAR_ex.ipynb : use statsmodels
+    }
+    package SVAR {
+        object SVAR_ex.ipynb
+            SVAR_ex.ipynb : use statsmodels
     }
 }
 
@@ -25,10 +30,11 @@ package Document {
 
 
 Model_list --> VAR
+Model_list --> SVAR
 Document_list --> Vector_AutoRegression
 
 map "Repo_Map" as unit  {
-    Document_list *-> Document_list
+    Document_list *---> Document_list
     Data_management *---> Data
     Model_list *---> Model_list
 }
