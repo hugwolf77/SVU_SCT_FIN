@@ -1,17 +1,27 @@
 @startuml Repo_Map
 /' 
-2023.04.26
-start alpha ver 0.1
+2023.04.27
+start alpha ver 0.2
 by Augstine_Kim (Kim Eui Cheol)
 '/ 
 
-object Data
+object Data_list
 object Model_list
  Model_list : VAR(Vector AutoRegression)
  Model_list : SVAR(Vector AutoRegression)
 object Document_list
  Document_list :  Vector_AutoRegression
 
+/'
+  DataSet source
+'/
+package DataSet {
+
+}
+
+/'
+  Models
+'/
 package Model {
     package VAR {
         object VAR_ex.ipynb
@@ -23,19 +33,42 @@ package Model {
     }
 }
 
+/'
+  Documents 
+'/
 package Document {
-    object Vector_AutoRegression
+    map "Vector_AutoRegression" as doc {
+        1=>VAR(Vector AutoRegressive) 모형 1
+        2=>VAR(Vector AutoRegressive) 모형 2
+        3=>VAR 분석절차 3
+        4=>VAR 인과관계 검정 4
+        5=>내생변수와 외생변수
+        6=>단위근,공적분
+        7=>SVAR(structural Vector AutoRegressive) 모형
+    }
 
-}
+    map "concept understanding" as concept {
+        1=>Dynamic Relationship
+        2=>NDF(Non-Deliverable Forward 역외선물환)
+        3=>선물환율과 현물환율
+        4=>수익율의 변동성의 비대칭성(Asymmetry of Volatility)
+        5=>옵션 내.외가격 상태(ITM, ATM,OTM)
+        6=>필립스 곡선(Philips curve)
+    }
 
+ }
 
+/'
+  Relation connect
+'/
+Data_list --> DataSet
 Model_list --> VAR
 Model_list --> SVAR
-Document_list --> Vector_AutoRegression
+Document_list --> doc
 
 map "Repo_Map" as unit  {
     Document_list *---> Document_list
-    Data_management *---> Data
+    Data_management *---> Data_list
     Model_list *---> Model_list
 }
 
