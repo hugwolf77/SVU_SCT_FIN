@@ -1,6 +1,7 @@
 @startuml Repo_Map
 /' 
 2023.04.27
+2023.07.17
 start alpha ver 0.2
 by Augstine_Kim (Kim Eui Cheol)
 '/ 
@@ -37,7 +38,15 @@ package Model {
     }
     package Sadj {
         object X13_arima_sadj
-            BOK_DATA_set_02.ipynb : x13_arima_seats
+            X13_arima_sadj : x13_arima_seats
+    }
+    package em_DFM {
+        object em_TSA_DFM
+            em_TSA_DFM : use statsmodels
+    }
+    package NN {
+        object Neural_Network
+            Neural_Network : pytorch
     }
 }
 
