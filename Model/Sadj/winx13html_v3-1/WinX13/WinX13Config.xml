@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WinX13ConfigSettings xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <InstallPath>D:\2023\Sadj\winx13html_v3-1\WinX13\x13as\</InstallPath>
+  <Executable>x13as_html</Executable>
+  <DataPath>D:\2023\Sadj\test_01</DataPath>
+  <GraphicsPath>D:\2023\Sadj\test_01\</GraphicsPath>
+  <EditorProgram />
+  <OutputFilesToShow>ols</OutputFilesToShow>
+  <ShowOutput>y</ShowOutput>
+  <ShowLog>n</ShowLog>
+  <ShowError>false</ShowError>
+  <ShowScreenOutput>false</ShowScreenOutput>
+  <GraphingProgram>JAVA</GraphingProgram>
+  <JavaCommandPath>D:\KEC\tools\java-1.8.0-openjdk-1.8.0.232-2.b09.ojdkbuild.windows.x86_64\bin\java</JavaCommandPath>
+  <SASGraphingProgramDirectory />
+  <CheckBoxSettings>gsodr</CheckBoxSettings>
+  <ColorComments>y</ColorComments>
+  <DeleteTempFilesOnClosing>true</DeleteTempFilesOnClosing>
+  <TimeDiscrepancyAllowance>2</TimeDiscrepancyAllowance>
+  <DefaultSpecTemplate />
+  <OutputDirectory />
+  <WarnForOutputGraphicsMatch>true</WarnForOutputGraphicsMatch>
+</WinX13ConfigSettings>

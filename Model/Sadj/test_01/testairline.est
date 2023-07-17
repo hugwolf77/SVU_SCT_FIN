@@ -1,0 +1,16 @@
+$regression:
+$regression$estimates:
+group	variable	estimate	standard error	fixed
+-----	--------	-----------	--------------	-----
+1-Coefficient Trading Day	Weekday	-0.330001256618376E-02	+0.524316218138758E-03	       
+Easter[1]	Easter[1]	+0.163445292921740E-01	+0.729901559523449E-02	       
+Automatically Identified Outliers	AO1954.Feb	-0.681985967629999E-01	+0.170818745539124E-01	       
+$arima:
+$arima$estimates:
+operator	factor	period	lag	estimate	standard error	fixed
+--------	------	------	---	--------	--------------	-----
+MA	Seasonal	12	12	+0.49346623973994E+00	+0.88700558685796E-01	       
+$variance:
+
+mle	+0.76887298164790E-03
+se	+0.11155981750736E-03

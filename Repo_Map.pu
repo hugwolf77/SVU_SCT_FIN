@@ -31,6 +31,14 @@ package Model {
         object SVAR_ex.ipynb
             SVAR_ex.ipynb : use statsmodels
     }
+    package vECM_02 {
+        object ex_VECM_02.ipynb
+            ex_VECM_02.ipynb : use statsmodels
+    }
+    package Sadj {
+        object X13_arima_sadj
+            BOK_DATA_set_02.ipynb : x13_arima_seats
+    }
 }
 
 /'

@@ -1,0 +1,4 @@
+factor_multiplicities = {
+    'Global': 2,
+    
+    }
