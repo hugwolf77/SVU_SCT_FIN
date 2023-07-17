@@ -3,7 +3,10 @@
 [Financial Time Series Signal Data Analysis Lab \
 Convergence Technology Management & Smart City \
 SEOUL VENTURE UNIVERSITY](https://www.svu.ac.kr/department/department.php?catcode=10100000&prdcode=2212200002) \
-update: 2023. 04.26
+update: 2023. 07.17
+
+
+
 
 Kim Eui Cheol
 ###
@@ -12,6 +15,9 @@ Kim Eui Cheol
 > economic and financial data analysis. \
 > signal time-series data analysis.
 
+This is a repository that studies time series and economic data models.
 
-> [map]
-![map](https://user-images.githubusercontent.com/94761022/235433957-d59c2415-2423-4d1c-a6d6-e380e19710b0.png)
+Please understand that it has not been maintained yet.
+
+<!-- > [map]
+![map](https://user-images.githubusercontent.com/94761022/235433957-d59c2415-2423-4d1c-a6d6-e380e19710b0.png) -->
