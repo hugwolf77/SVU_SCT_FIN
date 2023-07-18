@@ -9,3 +9,7 @@ __pycache__/
 # source code analysis dir
 
 __code_analy__/
+
+# model code bak
+
+bak/
