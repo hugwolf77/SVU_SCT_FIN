@@ -6,26 +6,6 @@ from torch.nn.parameter import Parameter
 import math
 
 
-# def binary_cross_entropy_with_logits(input, target, weight=None, size_average=True, reduce=True):
-#     if not (target.size() == input.size()):
-#         raise ValueError("Target size ({}) must be the same as input size ({})".format(
-#             target.size(), input.size()))
-
-#     max_val = (-input).clamp(min=0)
-#     loss = input - input * target + max_val + \
-#         ((-max_val).exp() + (-input - max_val).exp()).log()
-
-#     if weight is not None:
-#         loss = loss * weight
-
-#     if not reduce:
-#         return loss
-#     elif size_average:
-#         return loss.mean()
-#     else:
-#         return loss.sum()
-
-
 class FeatureRegression(nn.Module):
     def __init__(self, input_size):
         super(FeatureRegression, self).__init__()
@@ -90,48 +70,60 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         self.seq_len = args.seq_len
+        self.input_size = args.channels
         self.rnn_hid_size = args.rnn_hid_size
-        self.impute_weight = args.impute_weight
-        self.label_weight = args.label_weight
 
         self.build()
 
     def build(self):
-        self.rnn_cell = nn.LSTMCell(35 * 2, self.rnn_hid_size)
+        self.rnn_cell = nn.LSTMCell(self.input_sizev, self.rnn_hid_size)
 
         self.temp_decay_h = TemporalDecay(
-            input_size=35, output_size=self.rnn_hid_size, diag=False)
+            input_size=self.input_size, output_size=self.rnn_hid_size, diag=False)
         self.temp_decay_x = TemporalDecay(
-            input_size=35, output_size=35, diag=True)
+            input_size=self.input_size, output_size=self.rnn_hid_size, diag=True)
 
-        self.hist_reg = nn.Linear(self.rnn_hid_size, 35)
-        self.feat_reg = FeatureRegression(35)
+        self.hist_reg = nn.Linear(self.rnn_hid_size, self.input_size)
+        self.feat_reg = FeatureRegression(self.input_size)
 
-        self.weight_combine = nn.Linear(35 * 2, 35)
+        self.weight_combine = nn.Linear(
+            self.input_size * 2, self.input_size)
 
-        self.dropout = nn.Dropout(p=0.25)
-        self.out = nn.Linear(self.rnn_hid_size, 1)
+        self.delta_calc()
 
-    def forward(self, data, direct):
-        # Original sequence with 24 time steps
-        values = data[direct]['values']
-        masks = data[direct]['masks']
-        deltas = data[direct]['deltas']
+    def delta_calc(self, mask):
+        # just 1step is time-strimp 1 month step
+        delta = torch.zeros_like(mask)
+        decay = 1
+        for i in range(mask.shape[0]):
+            for d in range(mask.shape[1]):
+                if d == 0:
+                    delta[i, d] = 0
+                elif d == 1:
+                    decay = 1
+                    delta[i, d] = decay
+                elif mask[i, d-1] == 0:
+                    decay += 1
+                    delta[i, d] = delta[i, d]+decay
+                elif mask[i, d-1] == 1:
+                    decay = 1
+                    delta[i, d] = decay
+        return delta
 
-        evals = data[direct]['evals']
-        eval_masks = data[direct]['eval_masks']
+    def forward(self, data):
 
-        labels = data['labels'].view(-1, 1)
-        is_train = data['is_train'].view(-1, 1)
+        # make function for each section data
+
+        values = data
+        masks = torch.logical_not(torch.isnan(data)).float()
+        # just 1step is time-strimp 1 month step
+        deltas = self.delta_calc(data)
 
         h = Variable(torch.zeros((values.size()[0], self.rnn_hid_size)))
         c = Variable(torch.zeros((values.size()[0], self.rnn_hid_size)))
 
         if torch.cuda.is_available():
             h, c = h.cuda(), c.cuda()
-
-        x_loss = 0.0
-        y_loss = 0.0
 
         imputations = []
 
@@ -144,46 +136,20 @@ class Model(nn.Module):
             gamma_x = self.temp_decay_x(d)
 
             h = h * gamma_h
-
             x_h = self.hist_reg(h)
-            x_loss += torch.sum(torch.abs(x - x_h) * m) / (torch.sum(m) + 1e-5)
 
             x_c = m * x + (1 - m) * x_h
-
             z_h = self.feat_reg(x_c)
-            x_loss += torch.sum(torch.abs(x - z_h) * m) / (torch.sum(m) + 1e-5)
 
             alpha = self.weight_combine(torch.cat([gamma_x, m], dim=1))
-
             c_h = alpha * z_h + (1 - alpha) * x_h
-            x_loss += torch.sum(torch.abs(x - c_h) * m) / (torch.sum(m) + 1e-5)
-
             c_c = m * x + (1 - m) * c_h
 
             inputs = torch.cat([c_c, m], dim=1)
-
             h, c = self.rnn_cell(inputs, (h, c))
 
             imputations.append(c_c.unsqueeze(dim=1))
 
         imputations = torch.cat(imputations, dim=1)
 
-        y_h = self.out(h)
-        # y_loss = binary_cross_entropy_with_logits(y_h, labels, reduce=False)
-        # y_loss = torch.sum(y_loss * is_train) / (torch.sum(is_train) + 1e-5)
-
-        y_h = F.sigmoid(y_h)
-
-        return {'loss': x_loss * self.impute_weight + y_loss * self.label_weight, 'predictions': y_h,
-                'imputations': imputations, 'labels': labels, 'is_train': is_train,
-                'evals': evals, 'eval_masks': eval_masks}
-
-    # def run_on_batch(self, data, optimizer, epoch=None):
-    #     ret = self(data, direct='forward')
-
-    #     if optimizer is not None:
-    #         optimizer.zero_grad()
-    #         ret['loss'].backward()
-    #         optimizer.step()
-
-    #     return ret
+        return {'imputations': imputations}

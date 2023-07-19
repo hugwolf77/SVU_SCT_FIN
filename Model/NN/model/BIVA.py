@@ -81,6 +81,34 @@ class series_decomp_multi(nn.Module):
         return res, moving_mean
 
 
+class RIN(nn.Module):
+    def __init__(self):
+        super(RIN, self).__init__()
+
+    def build(self):
+        self.affine_weight = nn.Parameter(torch.ones(1, 1, 1))
+        self.affine_bias = nn.Parameter(torch.zeros(1, 1, 1))
+
+    def set_RIN(self, x):
+        # print('/// RIN ACTIVATED ///\r', end='')
+        means = x.mean(1, keepdim=True).detach()
+        x = x - means
+        stdev = torch.sqrt(
+            torch.var(x, dim=1, keepdim=True, unbiased=False) + 1e-5)
+        x /= stdev
+        x = x * self.affine_weight + self.affine_bias
+        return x
+
+    def off_RIN(self, x):
+        x = x - self.affine_bias
+        x = x / (self.affine_weight + 1e-10)
+        stdev = stdev[:, :, -1:]
+        means = means[:, :, -1:]
+        x = x * stdev
+        x = x + means
+        return x
+
+
 class Model(nn.Module):
     """
     Bi-direction Recurrent Imputation & VAE
@@ -88,15 +116,20 @@ class Model(nn.Module):
 
     def __init__(self, args):
         super(Model, self).__init__()
-        self.seq_len = args.seq_len
-        self.pred_len = args.pred_len
+        self.seq_len = args.seq_len         # manthly observation input value
+        self.pred_len = args.pred_len       # qurter state target value
 
-        self.channels = args.channels
+        self.channels = args.channels       # times series or feature
         self.label_len = args.label_len
-        self.conv_kernal = args.conv_kernal
+        self.conv_kernal = args.conv_kernal  # if use conv1d layer
         self.batch_size = args.batch_size
-        # Decomp
+        # time Series decompose average pooling kernel size
         self.kernel_size = args.moving_avg
+        self.RIN = args.RIN                 # boolen, Reverse Instance Normalize option
+        self.combination = args.combination  # boolen, compose time Series part option
+
+    def build(self, args):
+        # Decompose
         if isinstance(self.kernel_size, list):
             self.decomposition = series_decomp_multi(self.kernel_size)
         else:
@@ -104,13 +137,31 @@ class Model(nn.Module):
 
         # brits
         self.BRITS = BRITS(args)
-
         # lstm_vae
         self.LSTM_VAE = LSTM_VAE(args)
 
         # Reverse Instance Normalize & T-S combination param
-        self.RIN = args.RIN
-        self.combination = args.combination
+        if self.RIN:
+            self.RIN_func = RIN()
+            # self.affine_weight = nn.Parameter(torch.ones(1, 1, 1))
+            # self.affine_bias = nn.Parameter(torch.zeros(1, 1, 1))
+        if self.combination:
+            self.alpha = nn.Parameter(torch.ones(1, 1, 1))
+
+        # if self.conv1d:
+        #   self.Conv1d_Seasonal = nn.Conv1d(self.channels, self.label_len, kernel_size=self.conv_kernal, dilation=1, stride=1, groups= 1)
+        #   self.Linear_Seasonal = nn.Linear(self.seq_len,self.pred_len)
+        #   self.Linear_Seasonal.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
+
+        #   self.Conv1d_Trend = nn.Conv1d(self.channels, self.label_len, kernel_size=self.conv_kernal, dilation=1, stride=1, groups= 1)
+        #   self.Linear_Trend = nn.Linear(self.seq_len,self.pred_len)
+        #   self.Linear_Trend.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
+
+        # else:
+        #   self.Linear_Seasonal = nn.Linear(self.seq_len,self.pred_len)
+        #   self.Linear_Seasonal.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
+        #   self.Linear_Trend = nn.Linear(self.seq_len,self.pred_len)
+        #   self.Linear_Trend.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
 
         # Trend
         self.Linear_Trend = nn.Linear(self.seq_len, self.pred_len)
@@ -122,26 +173,25 @@ class Model(nn.Module):
         self.Linear_Seasonal.weight = nn.Parameter(
             (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
-        # RIN Parameters
-        if self.RIN:
-            self.affine_weight = nn.Parameter(torch.ones(1, 1, 1))
-            self.affine_bias = nn.Parameter(torch.zeros(1, 1, 1))
-
-        # combination T-S
-        if self.combination:
-            self.alpha = nn.Parameter(torch.ones(1, 1, 1))
+        # forecasting target Time Step
 
     def forward(self, x):
         # x: [Batch, Input length, Channel]
-        if self.RIN:
-            print('/// RIN ACTIVATED ///\r', end='')
-            means = x.mean(1, keepdim=True).detach()
-            x = x - means
-            stdev = torch.sqrt(
-                torch.var(x, dim=1, keepdim=True, unbiased=False) + 1e-5)
-            x /= stdev
-            x = x * self.affine_weight + self.affine_bias
 
+        if self.RIN:
+            x = self.RIN_func.set_RIN(x)
+            # print('/// RIN ACTIVATED ///\r', end='')
+            # means = x.mean(1, keepdim=True).detach()
+            # x = x - means
+            # stdev = torch.sqrt(
+            #     torch.var(x, dim=1, keepdim=True, unbiased=False) + 1e-5)
+            # x /= stdev
+            # x = x * self.affine_weight + self.affine_bias
+
+        # BRITS
+        x = self.BRITS(x)
+
+        # decompose timeseries
         seasonal_init, trend_init = self.decomposition(x)
 
         seasonal_output, trend_init = seasonal_init.permute(
@@ -149,8 +199,6 @@ class Model(nn.Module):
 
         trend_output = self.Linear_Trend(trend_init)
 
-        # BRITS
-        seasonal_output = self.BRITS(seasonal_output)
         # LSTM_VAE
         output, mu, logvar, z = self.LSTM_VAE(seasonal_output)
 
@@ -158,8 +206,6 @@ class Model(nn.Module):
 
         if self.combination:
             x = (seasonal_output*(self.alpha)) + (trend_output*(1-self.alpha))
-            # print(f"combination_alpha trend: {(1-self.alpha)}")
-            # print(f"combination_alpha seasonal: {(self.alpha)}")
 
         else:
             x = seasonal_output + trend_output
@@ -167,11 +213,13 @@ class Model(nn.Module):
         x = x.permute(0, 2, 1)  # to [Batch, Output length, Channel]
 
         if self.RIN:
-            x = x - self.affine_bias
-            x = x / (self.affine_weight + 1e-10)
-            stdev = stdev[:, :, -1:]
-            means = means[:, :, -1:]
-            x = x * stdev
-            x = x + means
+            x = self.RIN_func.off_RIN(x)
+
+            # x = x - self.affine_bias
+            # x = x / (self.affine_weight + 1e-10)
+            # stdev = stdev[:, :, -1:]
+            # means = means[:, :, -1:]
+            # x = x * stdev
+            # x = x + means
 
         return x
