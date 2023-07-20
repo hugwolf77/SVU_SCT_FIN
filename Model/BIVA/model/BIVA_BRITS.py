@@ -1,11 +1,11 @@
-
-import BIVA_RITS as RITS  # RITS
-from torch.nn.parameter import Parameter
-from torch.autograd import Variable
-import torch.nn as nn
-import torch
 import os
 os.chdir('/content/SVU_SCT_FIN/Model/BIVA/model')
+
+import torch.nn as nn
+import torch
+from torch.nn.parameter import Parameter
+from torch.autograd import Variable
+import BIVA_RITS as RITS  # RITS
 
 
 class Model(nn.Module):
