@@ -123,16 +123,14 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            outputs = self.model(batch_x)
-                            states, recon_output, forecast = self.models(
-                                batch_x)
+                            # outputs = self.model(batch_x)
+                            states, recon_output, forecast = self.models(batch_x)
                         else:
                             pass
 
                         f_dim = -1 if self.args.features == 'MS' else 0
                         outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                        batch_y = batch_y[:, -self.args.pred_len:,
-                                          f_dim:].to(self.device)
+                        batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
                         #
 

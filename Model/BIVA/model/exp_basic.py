@@ -8,7 +8,6 @@ class Exp_Basic(object):
         self.args = args
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
-        # self.device = self._acquire_device()
         # self.model = self._build_model().cuda()  #sci-net setting
 
     def _build_model(self):

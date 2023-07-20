@@ -57,14 +57,24 @@ class Dataset_Custom(Dataset):
         df_Q = df_Q.iloc[:, :].astype('float')
         df_Q.index.name = 'date'
 
+        cols = list(df_M.columns)
         # print(f"df_raw.cols : {df_raw.columns}")
-        cols = list(df_M)
         # cols.remove(self.target)
         # cols.remove('mea_dt')
 
         # df_raw.rename(columns={'mea_dt': 'date'}, inplace=True)
         # target value position define
         # df_raw = df_M[['date'] + cols + [self.target]]
+
+        num_train = int(len(df_M) * (0.7 if not self.train_only else 1))
+        num_test = int(len(df_M) * 0.2)
+        num_vali = len(df_M) - num_train - num_test
+        border1s = [0, num_train - self.seq_len, len(df_M) - num_test - self.seq_len]
+        border2s = [num_train, num_train + num_vali, len(df_M)]
+        border1 = border1s[self.set_type]
+        border2 = border2s[self.set_type]
+
+
 
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
@@ -132,8 +142,8 @@ class Dataset_Custom(Dataset):
             # data_stamp_t = data_stamp_t.transpose(1, 0)
             data_stamp_t = df_stamp_t.values
 
-        self.data_x = data  # [border1:border2]
-        self.data_y = data_t  # [border1:border2]
+        self.data_x = data[border1:border2]
+        self.data_y = data_t[border1:border2]
         self.data_stamp = data_stamp
         self.data_stamp_t = data_stamp_t
 
@@ -142,7 +152,7 @@ class Dataset_Custom(Dataset):
         s_end = s_begin + self.seq_len
         # r_begin = s_end - self.label_len
         r_begin = index
-        r_end = r_begin + self.pred_len
+        r_end = r_begin + self.pred_len + self.lable_len
 
         seq_x = self.data_x[s_begin:s_end]
         seq_y = self.data_y[r_begin:r_end]
