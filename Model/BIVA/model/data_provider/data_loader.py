@@ -40,7 +40,8 @@ class Dataset_Custom(Dataset):
         self.__read_data__()
 
     def __read_data__(self):
-        self.scaler = StandardScaler()
+        self.scaler_m = StandardScaler()
+        self.scaler_q = StandardScaler()
         df_M = pd.read_excel(os.path.join(self.root_path, self.data_path),
                              index_col='date', sheet_name='df_M', header=0)
         p_rng_m = pd.period_range('1970-01-01', '2023-06-01', freq='m')
@@ -93,10 +94,10 @@ class Dataset_Custom(Dataset):
         if self.scale:
             train_data = df_data
             train_data_t = df_data_t
-            self.scaler.fit(train_data.values)
-            data = self.scaler.transform(df_data.values)
-            self.scaler.fit(train_data_t.values)
-            data_t = self.scaler.transform(df_data_t.values)
+            self.scaler_m.fit(train_data.values)
+            data = self.scaler_m.transform(df_data.values)
+            self.scaler_q.fit(train_data_t.values)
+            data_t = self.scaler_q.transform(df_data_t.values)
         else:
             data = df_data.values
             data_t = df_data_t.values

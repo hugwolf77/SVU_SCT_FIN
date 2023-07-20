@@ -34,7 +34,6 @@ def data_provider(args, flag):
         data_path=args.data_path,
         size=args.data_shape,
         flag=flag,
-        size=[args.seq_len, args.label_len, args.pred_len],
         features=args.features,
         target=args.target,
         inverse=args.inverse,

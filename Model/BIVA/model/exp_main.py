@@ -1,5 +1,5 @@
 
-from model import BIVA, em_DFM
+from model import BIVA  # ,em_DFM
 
 import matplotlib.pyplot as plt
 from utils.metrics import metric
@@ -25,7 +25,7 @@ class Exp_Main(Exp_Basic):
     def _build_model(self):
         model_dict = {
             'BIVA': BIVA,
-            'em_DFM': em_DFM,
+            # 'em_DFM': em_DFM,
         }
         model = model_dict[self.args.model].Model(self.args).float()
 
