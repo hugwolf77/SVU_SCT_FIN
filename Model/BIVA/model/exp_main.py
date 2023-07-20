@@ -117,6 +117,8 @@ class Exp_Main(Exp_Basic):
                 batch_x = batch_x.float().to(self.device)
 
                 batch_y = batch_y.float().to(self.device)
+                print(f"batch_y.shape: {batch_y.shape}")
+                
                 batch_x_mark = batch_x_mark.float().to(self.device)
                 batch_y_mark = batch_y_mark.float().to(self.device)
 
@@ -130,24 +132,35 @@ class Exp_Main(Exp_Basic):
 
                         f_dim = -1 if self.args.features == 'MS' else 0
                         outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                        batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                        batch_y_stats = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                        batch_y_for = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
                         #
+                        loss_recon = criterion(recon_output,batch_x)
+                        loss_states = criterion(states,batch_y_stats)
+                        loss_forecast = criterion(forecast,batch_y_for)
+                        loss = loss_recon + loss_states + loss_forecast
 
-                        loss = criterion(outputs, batch_y)
                         train_loss.append(loss.item())
 
                 else:
                     if 'BIVA' in self.args.model:
-                        outputs = self.model(batch_x)
+                        states, recon_output, forecast = self.models(batch_x)
                     else:
                         pass
 
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                    batch_y = batch_y[:, -self.args.pred_len:,
-                                      f_dim:].to(self.device)
-                    loss = criterion(outputs, batch_y)
+                    
+                    batch_y_stats = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                    batch_y_for = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+
+                    #
+                    loss_recon = criterion(recon_output,batch_x)
+                    loss_states = criterion(states,batch_y_stats)
+                    loss_forecast = criterion(forecast,batch_y_for)
+                    loss = loss_recon + loss_states + loss_forecast
+                    
                     train_loss.append(loss.item())
 
                 if (i + 1) % 100 == 0:
