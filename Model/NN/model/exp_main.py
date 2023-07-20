@@ -125,6 +125,8 @@ class Exp_Main(Exp_Basic):
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
                             outputs = self.model(batch_x)
+                            states, recon_output, forecast = self.models(
+                                batch_x)
                         else:
                             pass
 
@@ -132,6 +134,9 @@ class Exp_Main(Exp_Basic):
                         outputs = outputs[:, -self.args.pred_len:, f_dim:]
                         batch_y = batch_y[:, -self.args.pred_len:,
                                           f_dim:].to(self.device)
+
+                        #
+
                         loss = criterion(outputs, batch_y)
                         train_loss.append(loss.item())
 

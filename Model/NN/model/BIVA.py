@@ -116,16 +116,21 @@ class Model(nn.Module):
 
     def __init__(self, args):
         super(Model, self).__init__()
-        self.seq_len = args.seq_len         # manthly observation input value
-        self.pred_len = args.pred_len       # qurter state target value
+        self.seq_len = args.seq_len          # manthly observation input value
+        self.pred_len = args.pred_len        # qurter state target value
+        self.target = args.target
 
-        self.channels = args.channels       # times series or feature
+        self.channels = args.channels        # times series or feature
         self.label_len = args.label_len
+        self.latent_size = args.vae_latent_size
+
         self.conv_kernal = args.conv_kernal  # if use conv1d layer
-        self.batch_size = args.batch_size
         # time Series decompose average pooling kernel size
         self.kernel_size = args.moving_avg
-        self.RIN = args.RIN                 # boolen, Reverse Instance Normalize option
+
+        self.batch_size = args.batch_size
+        self.conv1d = args.conv1d
+        self.RIN = args.RIN                  # boolen, Reverse Instance Normalize option
         self.combination = args.combination  # boolen, compose time Series part option
 
     def build(self, args):
@@ -148,32 +153,33 @@ class Model(nn.Module):
         if self.combination:
             self.alpha = nn.Parameter(torch.ones(1, 1, 1))
 
-        # if self.conv1d:
-        #   self.Conv1d_Seasonal = nn.Conv1d(self.channels, self.label_len, kernel_size=self.conv_kernal, dilation=1, stride=1, groups= 1)
-        #   self.Linear_Seasonal = nn.Linear(self.seq_len,self.pred_len)
-        #   self.Linear_Seasonal.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
+        if self.conv1d:
+            self.Conv1d_Seasonal = nn.Conv1d(
+                self.latent_size, self.label_len, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Linear_Seasonal = nn.Linear(self.seq_len, self.pred_len)
+            self.Linear_Seasonal.weight = nn.Parameter(
+                (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
-        #   self.Conv1d_Trend = nn.Conv1d(self.channels, self.label_len, kernel_size=self.conv_kernal, dilation=1, stride=1, groups= 1)
-        #   self.Linear_Trend = nn.Linear(self.seq_len,self.pred_len)
-        #   self.Linear_Trend.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
+            self.Conv1d_Trend = nn.Conv1d(
+                self.channels, self.label_len, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Linear_Trend = nn.Linear(self.seq_len, self.pred_len)
+            self.Linear_Trend.weight = nn.Parameter(
+                (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
-        # else:
-        #   self.Linear_Seasonal = nn.Linear(self.seq_len,self.pred_len)
-        #   self.Linear_Seasonal.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
-        #   self.Linear_Trend = nn.Linear(self.seq_len,self.pred_len)
-        #   self.Linear_Trend.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
-
-        # Trend
-        self.Linear_Trend = nn.Linear(self.seq_len, self.pred_len)
-        self.Linear_Trend.weight = nn.Parameter(
-            (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
-
-        # Seasonal
-        self.Linear_Seasonal = nn.Linear(self.seq_len, self.pred_len)
-        self.Linear_Seasonal.weight = nn.Parameter(
-            (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
+        else:
+            self.Linear_Seasonal = nn.Linear(self.seq_len, self.pred_len)
+            self.Linear_Seasonal.weight = nn.Parameter(
+                (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
+            self.Linear_Trend = nn.Linear(self.seq_len, self.pred_len)
+            self.Linear_Trend.weight = nn.Parameter(
+                (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
         # forecasting target Time Step
+        self.inference_lstm = nn.LSTM(
+            self.label_len, self.infer_hid_size, num_layers=1, batch_first=True)
+        self.inference_linear = nn.Linear(self.infer_hid_size, self.target)
+        self.inference_linear.weight = nn.Parameter(
+            (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
     def forward(self, x):
         # x: [Batch, Input length, Channel]
@@ -191,30 +197,32 @@ class Model(nn.Module):
         # BRITS
         x = self.BRITS(x)
 
-        # decompose timeseries
+        # decompose timeseries, purmute
         seasonal_init, trend_init = self.decomposition(x)
-
-        seasonal_output, trend_init = seasonal_init.permute(
+        seasonal_init, trend_init = seasonal_init.permute(
             0, 2, 1), trend_init.permute(0, 2, 1)
 
-        trend_output = self.Linear_Trend(trend_init)
+        # Trend
+        trend_output = self.Conv1d_Trend(trend_init)
+        trend_output = self.Linear_Trend(trend_output)
 
+        # Seasonal
         # LSTM_VAE
-        output, mu, logvar, z = self.LSTM_VAE(seasonal_output)
-
-        seasonal_output = self.Linear_Seasonal(z)
+        recon_output, mu, logvar, seasonal_output_z = self.LSTM_VAE(
+            seasonal_init)
+        seasonal_output = self.Conv1d_Seasonal(seasonal_output_z)
+        seasonal_output = self.Linear_Seasonal(seasonal_output)
 
         if self.combination:
-            x = (seasonal_output*(self.alpha)) + (trend_output*(1-self.alpha))
-
+            states = (seasonal_output*(self.alpha)) + \
+                (trend_output*(1-self.alpha))
         else:
-            x = seasonal_output + trend_output
+            states = seasonal_output + trend_output
 
-        x = x.permute(0, 2, 1)  # to [Batch, Output length, Channel]
+        states = states.permute(0, 2, 1)  # to [Batch, Output length, Channel]
 
         if self.RIN:
-            x = self.RIN_func.off_RIN(x)
-
+            states = self.RIN_func.off_RIN(states)
             # x = x - self.affine_bias
             # x = x / (self.affine_weight + 1e-10)
             # stdev = stdev[:, :, -1:]
@@ -222,4 +230,7 @@ class Model(nn.Module):
             # x = x * stdev
             # x = x + means
 
-        return x
+        forecast, _ = self.inference_lstm(states)
+        forecast = self.inference_linear(forecast)
+
+        return states, recon_output, forecast

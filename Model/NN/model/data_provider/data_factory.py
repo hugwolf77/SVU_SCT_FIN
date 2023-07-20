@@ -32,8 +32,7 @@ def data_provider(args, flag):
     data_set = Data(
         root_path=args.root_path,
         data_path=args.data_path,
-        val_path=args.val_path,
-        test_path=args.test_path,
+        size=args.data_shape,
         flag=flag,
         size=[args.seq_len, args.label_len, args.pred_len],
         features=args.features,
