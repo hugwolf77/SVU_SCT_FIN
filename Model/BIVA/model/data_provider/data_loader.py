@@ -4,7 +4,7 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from utils.tools import StandardScaler
+from utils.tools import StandardScaler, load_data_DFM, set_lag_DFM
 from utils.timefeatures import time_features
 
 import warnings
@@ -37,27 +37,47 @@ class Dataset_Custom(Dataset):
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
+        self.data_start = '2000-01'
+        self.data_end = '2022-12'
+        
+        self.load_data_DFM = load_data_DFM()
+        self.set_lag_DFM = set_lag_DFM()
+        
         self.__read_data__()
+
 
     def __read_data__(self):
         self.scaler_m = StandardScaler()
         self.scaler_q = StandardScaler()
-        df_M = pd.read_excel(os.path.join(self.root_path, self.data_path),
-                             index_col='date', sheet_name='df_M', header=0)
-        p_rng_m = pd.period_range('1970-01-01', '2023-06-01', freq='m')
-        df_M = df_M.set_index(p_rng_m)
-        df_M = df_M.iloc[:, :].astype('float')
-        df_M.index.name = 'date'
+        
+        path = os.path.join(self.root_path, self.data_path)
+        
+        df_Q, df_Q_trans, df_M, df_M_trans, var_info = load_data_DFM(path,self.data_start, self.data_end)
+        df_Q = set_lag_DFM(df_Q_trans, var_info, self.data_start, self.data_end, 'Q')
+        df_M = set_lag_DFM(df_M_trans, var_info, self.data_start, self.data_end, 'M')
+        
+        # df_M = pd.read_excel(os.path.join(self.root_path, self.data_path),
+        #                      index_col='date', sheet_name='df_M', header=0)
+        # p_rng_m = pd.period_range('1970-01-01', '2023-06-01', freq='m')
+        # df_M = df_M.set_index(p_rng_m)
+        # df_M = df_M.iloc[:, :].astype('float')
+        # df_M.index.name = 'date'
 
-        # Quater
-        df_Q = pd.read_excel(os.path.join(self.root_path, self.data_path),
-                             index_col='date', sheet_name='df_Q', header=0)
-        p_rng_q = pd.period_range('1960Q2', '2023Q1', freq='Q-FEB')
-        df_Q = df_Q.set_index(p_rng_q)
-        df_Q = df_Q.iloc[:, :].astype('float')
-        df_Q.index.name = 'date'
+        # # Quater
+        # df_Q = pd.read_excel(os.path.join(self.root_path, self.data_path),
+        #                      index_col='date', sheet_name='df_Q', header=0)
+        # p_rng_q = pd.period_range('1960Q2', '2023Q1', freq='Q-FEB')
+        # df_Q = df_Q.set_index(p_rng_q)
+        # df_Q = df_Q.iloc[:, :].astype('float')
+        # df_Q.index.name = 'date'
 
-        cols = list(df_M.columns)
+        cols_M = list(df_M.columns)
+        cols_Q = list(df_Q.columns)
+        df_M = df_M.loc[self.data_start, self.data_end, cols_M]
+        df_Q = df_M.loc[self.data_start, self.data_end, cols_Q]
+        print(f"df_M.shape : {df_M.shape}")
+        print(f"df_Q.shape : {df_Q.shape}")
+        
         # print(f"df_raw.cols : {df_raw.columns}")
         # cols.remove(self.target)
         # cols.remove('mea_dt')
@@ -75,30 +95,29 @@ class Dataset_Custom(Dataset):
         border2 = border2s[self.set_type]
 
 
-
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
                 # cols_data = df_M.columns[1:]
-                df_data = df_M[cols]
+                df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
             elif self.features == 'S':
-                df_data = df_M[cols]
+                df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
         elif self.set_type == 1:
             if self.features == 'M' or self.features == 'MS':
                 # cols_data = df_M.columns[1:]
-                df_data = df_M[cols]
+                df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
             elif self.features == 'S':
-                df_data = df_M[cols]
+                df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
         else:
             if self.features == 'M' or self.features == 'MS':
                 # cols_data = df_M.columns[1:]
-                df_data = df_M[cols]
+                df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
             elif self.features == 'S':
-                df_data = df_M[cols]
+                df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
 
         if self.scale:
