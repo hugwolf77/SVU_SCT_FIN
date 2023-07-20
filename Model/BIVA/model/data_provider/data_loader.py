@@ -103,35 +103,34 @@ class Dataset_Custom(Dataset):
             data_t = df_data_t.values
 
         # data_stamp_data_M
-        df_stamp = df_M[['date']]  # [border1:border2]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
+        df_stamp = df_M.index  # [border1:border2]
+        # df_stamp = pd.to_datetime(df_stamp)
         if self.timeenc == 0:
-            df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
-            df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
-            df_stamp['weekday'] = df_stamp.date.apply(
-                lambda row: row.weekday(), 1)
-            df_stamp['hour'] = df_stamp.date.apply(lambda row: row.hour, 1)
-            data_stamp = df_stamp.drop(['date'], 1).values
+            df_stamp['month'] = df_stamp.apply(lambda row: row.month, 1)
+            df_stamp['day'] = df_stamp.apply(lambda row: row.day, 1)
+            df_stamp['weekday'] = df_stamp.apply(lambda row: row.weekday(), 1)
+            df_stamp['hour'] = df_stamp.apply(lambda row: row.hour, 1)
+            data_stamp = df_stamp.values
         elif self.timeenc == 1:
-            data_stamp = time_features(pd.to_datetime(
-                df_stamp['date'].values), freq=self.freq)
-            data_stamp = data_stamp.transpose(1, 0)
+            # data_stamp = time_features(df_stamp.values, freq=self.freq)
+            # data_stamp = data_stamp.transpose(1, 0)
+            data_stamp = df_stamp.values
 
         # data_stamp_target_Q
-        df_stamp_t = df_Q[['date']]  # [border1:border2]
-        df_stamp_t['date'] = pd.to_datetime(df_stamp_t.date)
+        df_stamp_t = df_Q.index
+        # df_stamp_t = df_Q[['date']]  # [border1:border2]
+        # df_stamp_t['date'] = pd.to_datetime(df_stamp_t.date)
         if self.timeenc == 0:
-            df_stamp_t['month'] = df_stamp_t.date.apply(
-                lambda row: row.month, 1)
-            df_stamp_t['day'] = df_stamp_t.date.apply(lambda row: row.day, 1)
-            df_stamp_t['weekday'] = df_stamp_t.date.apply(
-                lambda row: row.weekday(), 1)
-            df_stamp_t['hour'] = df_stamp_t.date.apply(lambda row: row.hour, 1)
+            df_stamp_t['month'] = df_stamp_t.apply(lambda row: row.month, 1)
+            # df_stamp_t['month'] = df_stamp_t.date.apply(lambda row: row.month, 1)
+            df_stamp_t['day'] = df_stamp_t.apply(lambda row: row.day, 1)
+            df_stamp_t['weekday'] = df_stamp_t.apply(lambda row: row.weekday(), 1)
+            df_stamp_t['hour'] = df_stamp_t.apply(lambda row: row.hour, 1)
             data_stamp_t = df_stamp_t.drop(['date'], 1).values
         elif self.timeenc == 1:
-            data_stamp_t = time_features(pd.to_datetime(
-                df_stamp_t['date'].values), freq=self.freq)
-            data_stamp_t = data_stamp_t.transpose(1, 0)
+            # data_stamp_t = time_features(pd.to_datetime(df_stamp_t['date'].values), freq=self.freq)
+            # data_stamp_t = data_stamp_t.transpose(1, 0)
+            data_stamp_t = data_stamp_t.values
 
         self.data_x = data  # [border1:border2]
         self.data_y = data_t  # [border1:border2]
