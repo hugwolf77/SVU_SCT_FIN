@@ -130,7 +130,7 @@ class Dataset_Custom(Dataset):
         elif self.timeenc == 1:
             # data_stamp_t = time_features(pd.to_datetime(df_stamp_t['date'].values), freq=self.freq)
             # data_stamp_t = data_stamp_t.transpose(1, 0)
-            data_stamp_t = data_stamp_t.values
+            data_stamp_t = df_stamp_t.values
 
         self.data_x = data  # [border1:border2]
         self.data_y = data_t  # [border1:border2]

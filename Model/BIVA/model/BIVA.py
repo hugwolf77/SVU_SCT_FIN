@@ -123,6 +123,7 @@ class Model(nn.Module):
         self.channels = args.channels        # times series or feature
         self.label_len = args.label_len
         self.latent_size = args.vae_latent_size
+        self.infer_hid_size = args.infer_hid_size
 
         self.conv_kernal = args.conv_kernal  # if use conv1d layer
         # time Series decompose average pooling kernel size
@@ -132,6 +133,7 @@ class Model(nn.Module):
         self.conv1d = args.conv1d
         self.RIN = args.RIN                  # boolen, Reverse Instance Normalize option
         self.combination = args.combination  # boolen, compose time Series part option
+        self.build(args)
 
     def build(self, args):
         # Decompose
@@ -141,9 +143,9 @@ class Model(nn.Module):
             self.decomposition = series_decomp(self.kernel_size)
 
         # brits
-        self.BRITS = BRITS(args)
+        self.BRITS = BRITS.Model(args)
         # lstm_vae
-        self.LSTM_VAE = LSTM_VAE(args)
+        self.LSTM_VAE = LSTM_VAE.Model(args)
 
         # Reverse Instance Normalize & T-S combination param
         if self.RIN:
@@ -178,8 +180,8 @@ class Model(nn.Module):
         self.inference_lstm = nn.LSTM(
             self.label_len, self.infer_hid_size, num_layers=1, batch_first=True)
         self.inference_linear = nn.Linear(self.infer_hid_size, self.target)
-        self.inference_linear.weight = nn.Parameter(
-            (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
+        # self.inference_linear.weight = nn.Parameter(
+        #     (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
     def forward(self, x):
         # x: [Batch, Input length, Channel]

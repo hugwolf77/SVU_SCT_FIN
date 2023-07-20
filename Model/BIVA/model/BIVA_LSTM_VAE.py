@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 
 
-class LSTMVAE(nn.Module):
+class Model(nn.Module):
     def __init__(self, args, num_layers=1, batch_norm=False):
-        super(LSTMVAE, self).__init__()
+        super(Model, self).__init__()
         self.input_size = args.channels
         self.seq_len = args.seq_len
-        self.embeding_size = args.vae_hidden_size
+        self.embeding_size = args.vae_hid_size
         self.hidden_size = (self.embeding_size*2)
         self.latent_size = args.vae_latent_size
 

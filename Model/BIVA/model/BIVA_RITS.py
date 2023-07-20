@@ -81,7 +81,7 @@ class Model(nn.Module):
         self.temp_decay_h = TemporalDecay(
             input_size=self.input_size, output_size=self.rnn_hid_size, diag=False)
         self.temp_decay_x = TemporalDecay(
-            input_size=self.input_size, output_size=self.rnn_hid_size, diag=True)
+            input_size=self.input_size, output_size=self.input_size, diag=True)
 
         self.hist_reg = nn.Linear(self.rnn_hid_size, self.input_size)
         self.feat_reg = FeatureRegression(self.input_size)
@@ -89,7 +89,7 @@ class Model(nn.Module):
         self.weight_combine = nn.Linear(
             self.input_size * 2, self.input_size)
 
-        self.delta_calc()
+        # self.delta_calc()
 
     def delta_calc(self, mask):
         # just 1step is time-strimp 1 month step
@@ -117,7 +117,7 @@ class Model(nn.Module):
         values = data
         masks = torch.logical_not(torch.isnan(data)).float()
         # just 1step is time-strimp 1 month step
-        deltas = self.delta_calc(data)
+        deltas = self.delta_calc(masks)
 
         h = Variable(torch.zeros((values.size()[0], self.rnn_hid_size)))
         c = Variable(torch.zeros((values.size()[0], self.rnn_hid_size)))
