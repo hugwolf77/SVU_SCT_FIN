@@ -76,7 +76,7 @@ class Model(nn.Module):
         self.build()
 
     def build(self):
-        self.rnn_cell = nn.LSTMCell(self.input_sizev, self.rnn_hid_size)
+        self.rnn_cell = nn.LSTMCell(self.input_size, self.rnn_hid_size)
 
         self.temp_decay_h = TemporalDecay(
             input_size=self.input_size, output_size=self.rnn_hid_size, diag=False)

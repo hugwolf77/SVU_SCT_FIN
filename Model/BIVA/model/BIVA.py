@@ -118,10 +118,10 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.seq_len = args.seq_len          # manthly observation input value
         self.pred_len = args.pred_len        # qurter state target value
-        self.target = args.target
+        self.label_len = args.label_len
+        # self.target_len = args.target_len
 
         self.channels = args.channels        # times series or feature
-        self.label_len = args.label_len
         self.latent_size = args.vae_latent_size
         self.infer_hid_size = args.infer_hid_size
 
@@ -179,7 +179,7 @@ class Model(nn.Module):
         # forecasting target Time Step
         self.inference_lstm = nn.LSTM(
             self.label_len, self.infer_hid_size, num_layers=1, batch_first=True)
-        self.inference_linear = nn.Linear(self.infer_hid_size, self.target)
+        self.inference_linear = nn.Linear(self.infer_hid_size, self.label_len)
         # self.inference_linear.weight = nn.Parameter(
         #     (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
