@@ -39,9 +39,11 @@ class Dataset_Custom(Dataset):
         self.data_path = data_path
         self.data_start = '2000-01'
         self.data_end = '2022-12'
+        self.data_start_Q = '2000Q1'
+        self.data_end_Q = '2022Q4'
         
-        self.load_data_DFM = load_data_DFM()
-        self.set_lag_DFM = set_lag_DFM()
+        self.load_data_DFM = load_data_DFM
+        self.set_lag_DFM = set_lag_DFM
         
         self.__read_data__()
 
@@ -74,7 +76,7 @@ class Dataset_Custom(Dataset):
         cols_M = list(df_M.columns)
         cols_Q = list(df_Q.columns)
         df_M = df_M.loc[self.data_start, self.data_end, cols_M]
-        df_Q = df_M.loc[self.data_start, self.data_end, cols_Q]
+        df_Q = df_M.loc[self.data_start_Q, self.data_end_Q, cols_Q]
         print(f"df_M.shape : {df_M.shape}")
         print(f"df_Q.shape : {df_Q.shape}")
         
@@ -93,6 +95,14 @@ class Dataset_Custom(Dataset):
         border2s = [num_train, num_train + num_vali, len(df_M)]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
+        
+        num_train = int(len(df_Q) * (0.7 if not self.train_only else 1))
+        num_test = int(len(df_Q) * 0.2)
+        num_vali = len(df_Q) - num_train - num_test
+        border1s_Q = [0, num_train - (self.label_len+self.pred_len), len(df_Q) - num_test - (self.label_len+self.pred_len)]
+        border2s_Q = [num_train, num_train + num_vali, len(df_Q)]
+        border1_Q = border1s_Q[self.set_type]
+        border2_Q = border2s_Q[self.set_type]
 
 
         if self.set_type == 0:
@@ -162,7 +172,7 @@ class Dataset_Custom(Dataset):
             data_stamp_t = df_stamp_t.values
 
         self.data_x = data[border1:border2]
-        self.data_y = data_t[border1:border2]
+        self.data_y = data_t[border1_Q:border2_Q]
         self.data_stamp = data_stamp
         self.data_stamp_t = data_stamp_t
 
