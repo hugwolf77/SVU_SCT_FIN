@@ -65,7 +65,7 @@ class Exp_Main(Exp_Basic):
 
                 else:
                     if 'BIVA' in self.args.model:
-                        outputs = self.model(batch_x)
+                       states, recon_output, forecast = self.model(batch_x)
                     else:
                         pass
 
@@ -76,8 +76,15 @@ class Exp_Main(Exp_Basic):
 
                 pred = outputs.detach().cpu()
                 true = batch_y.detach().cpu()
+                
 
                 loss = criterion(pred, true)
+
+                #
+                # loss_recon = criterion(recon_output,batch_x)
+                # loss_states = criterion(states,batch_y_stats)
+                # loss_forecast = criterion(forecast,batch_y_for)
+                # loss = loss_recon + loss_states + loss_forecast
 
                 total_loss.append(loss)
         total_loss = np.average(total_loss)
