@@ -157,13 +157,13 @@ class Model(nn.Module):
 
         if self.conv1d:
             self.Conv1d_Seasonal = nn.Conv1d(
-                self.latent_size, self.label_len, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+                self.latent_size, 1, kernel_size=self.latent_size, dilation=1, stride=1, groups=1)
             self.Linear_Seasonal = nn.Linear(self.seq_len, self.pred_len)
             self.Linear_Seasonal.weight = nn.Parameter(
                 (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
             self.Conv1d_Trend = nn.Conv1d(
-                self.channels, self.label_len, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+                self.channels, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
             self.Linear_Trend = nn.Linear(self.seq_len, self.pred_len)
             self.Linear_Trend.weight = nn.Parameter(
                 (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
@@ -177,9 +177,9 @@ class Model(nn.Module):
                 (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
         # forecasting target Time Step
-        self.inference_lstm = nn.LSTM(
-            self.label_len, self.infer_hid_size, num_layers=1, batch_first=True)
-        self.inference_linear = nn.Linear(self.infer_hid_size, self.label_len)
+        # self.inference_lstm = nn.LSTM(
+        #     self.label_len, self.infer_hid_size, num_layers=1, batch_first=True)
+        # self.inference_linear = nn.Linear(self.infer_hid_size, self.label_len)
         # self.inference_linear.weight = nn.Parameter(
         #     (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
@@ -199,25 +199,23 @@ class Model(nn.Module):
         # BRITS
         x = self.BRITS(x)
 
-        # decompose timeseries, purmute
+        # decompose timeseries
         seasonal_init, trend_init = self.decomposition(x)
-        seasonal_init, trend_init = seasonal_init.permute(
-            0, 2, 1), trend_init.permute(0, 2, 1)
-
-        # Trend
+        # -- Trend --
+        trend_init = trend_init.permute(0, 2, 1)
         trend_output = self.Conv1d_Trend(trend_init)
         trend_output = self.Linear_Trend(trend_output)
 
-        # Seasonal
+        # -- Seasonal --
         # LSTM_VAE
-        recon_output, mu, logvar, seasonal_output_z = self.LSTM_VAE(
-            seasonal_init)
+        recon_output, mu, logvar, seasonal_output_z = self.LSTM_VAE(seasonal_init)
+        # 
+        seasonal_init = seasonal_init.permute(0, 2, 1)
         seasonal_output = self.Conv1d_Seasonal(seasonal_output_z)
         seasonal_output = self.Linear_Seasonal(seasonal_output)
 
         if self.combination:
-            states = (seasonal_output*(self.alpha)) + \
-                (trend_output*(1-self.alpha))
+            states = (seasonal_output*(self.alpha)) + (trend_output*(1-self.alpha))
         else:
             states = seasonal_output + trend_output
 
@@ -232,7 +230,7 @@ class Model(nn.Module):
             # x = x * stdev
             # x = x + means
 
-        forecast, _ = self.inference_lstm(states)
-        forecast = self.inference_linear(forecast)
+        # forecast, _ = self.inference_lstm(states)
+        # forecast = self.inference_linear(forecast)
 
-        return states, recon_output, forecast
+        return states, recon_output

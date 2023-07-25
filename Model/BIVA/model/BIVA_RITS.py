@@ -5,7 +5,6 @@ from torch.autograd import Variable
 from torch.nn.parameter import Parameter
 import math
 
-
 class FeatureRegression(nn.Module):
     def __init__(self, input_size):
         super(FeatureRegression, self).__init__()

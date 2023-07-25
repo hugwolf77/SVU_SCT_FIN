@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 
 plt.switch_backend('agg')
 
+def repeat_row(series):
+  return series.repeat(3)
 
 def remove_outliers(dta):
     # Compute the mean and interquartile range
@@ -30,7 +32,7 @@ def adf_test(transformed):
         test_result = "{}".format("N")
     return test_result
         
-def transform(df, var_info, start, end, freq):
+def transform_adf(df, var_info, freq):
     for col in df.columns:
         # print(f"transform_column : {col}")
         diff = var_info[var_info['ID'] == col]['transform'].values[0]
@@ -38,11 +40,11 @@ def transform(df, var_info, start, end, freq):
         df_trans = df.copy()
         # transform N test
         if diff == 'Origin':
-            treated = remove_outliers(df[col][start:end])
+            treated = remove_outliers(df[col])
             transformed = treated.dropna()
             res = adf_test(transformed)
         elif diff == 'Diff-1':
-            treated = remove_outliers(df[col][start:end])
+            treated = remove_outliers(df[col])
             transformed = treated.diff().dropna()
             res = adf_test(transformed)
             df_trans[col] = transformed
@@ -51,12 +53,12 @@ def transform(df, var_info, start, end, freq):
             if col in ['A1', 'A2', 'A3', 'A4', 'A5', 'A6']:
                 res = 'X'
             else:
-                treated = remove_outliers(df[col][start:end])
+                treated = remove_outliers(df[col])
                 transformed = np.log(treated).dropna()
                 res = adf_test(transformed)
             df_trans[col] = transformed
         elif diff == 'Diff-2':
-            treated = remove_outliers(df[col][start:end])
+            treated = remove_outliers(df[col])
             transformed = treated.diff().diff().dropna()
             res = adf_test(transformed)
             df_trans[col] = transformed
@@ -66,7 +68,7 @@ def transform(df, var_info, start, end, freq):
         #     return print(f"transformed data column variable stationary Adfuller Test is fail: variable name ={col},{diff},{res}")
     return df_trans
  
-def load_data_DFM(data_path, start, end):
+def load_data_DFM(data_path):
     # load data
     # Quatery
     df_Q = pd.read_excel(data_path, index_col='date', sheet_name='df_Q', header=0)
@@ -85,28 +87,28 @@ def load_data_DFM(data_path, start, end):
     # Variable Info
     var_info = pd.read_excel(data_path, sheet_name='df_var_info', header=0)
     # diff transform for stationary
-    df_Q_trans = transform(df_Q, var_info, start, end, 'Q')
-    df_M_trans = transform(df_M, var_info, start, end, 'M')
+    df_Q_trans = transform_adf(df_Q, var_info,'Q')
+    df_M_trans = transform_adf(df_M, var_info,'M')
     return df_Q, df_Q_trans, df_M, df_M_trans, var_info
 
-def set_lag_DFM(df_trans, var_info, start, end, freq):
+def set_lag_DFM(df_trans, var_info, freq):
     df_set_lag = df_trans.copy()
     if freq == 'M':
       for col in df_trans.columns:
         # print(f"set_lag_column : {col}")
         lag = var_info[var_info['ID'] == col]['LAG'].values[0]
-        df_set = df_trans[col][start:end]
+        df_set = df_trans[col]
         if lag > 0:
           df_set = df_set[:-(lag)]
         else:
           df_set = df_set
         # print(f"df_set {col} : {df_set}")
         df_set_lag[col] = df_set
-      df_set_lag = df_set_lag[start:end]
+      df_set_lag = df_set_lag    
     else:
-      df_set = df_trans[start:end]
+      df_set = df_trans
       df_set_lag = df_set
-      df_set_lag = df_set_lag[start:end]
+      df_set_lag = df_set_lag
     return df_set_lag
 
 def save_model(epoch, lr, model, model_dir, model_name='pems08', horizon=12):

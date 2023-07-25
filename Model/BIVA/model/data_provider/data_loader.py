@@ -4,14 +4,14 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from utils.tools import StandardScaler, load_data_DFM, set_lag_DFM
+from utils.tools import StandardScaler, load_data_DFM, set_lag_DFM, repeat_row
 from utils.timefeatures import time_features
 
 import warnings
 warnings.filterwarnings('ignore')
 
 
-class Dataset_Custom(Dataset):
+class Dataset_BIVA(Dataset):
     def __init__(self, root_path, flag='train', size=None, features='MS', data_path='custom.csv',
                  target='GDP', scale=True, inverse=False, timeenc=0, freq='m', cols=None):
         # info
@@ -37,13 +37,14 @@ class Dataset_Custom(Dataset):
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
-        self.data_start = '2000-01'
-        self.data_end = '2022-12'
-        self.data_start_Q = '2000Q1'
-        self.data_end_Q = '2022Q4'
+        self.start_M = '2000-01'
+        self.end_M = '2022-12'
+        self.start_Q = '1999-03'
+        self.end_Q = '2023-03'
         
         self.load_data_DFM = load_data_DFM
         self.set_lag_DFM = set_lag_DFM
+        self.repeat_row = repeat_row
         
         self.__read_data__()
 
@@ -54,56 +55,23 @@ class Dataset_Custom(Dataset):
         
         path = os.path.join(self.root_path, self.data_path)
         
-        df_Q, df_Q_trans, df_M, df_M_trans, var_info = load_data_DFM(path,self.data_start, self.data_end)
-        df_Q = set_lag_DFM(df_Q_trans, var_info, self.data_start, self.data_end, 'Q')
-        df_M = set_lag_DFM(df_M_trans, var_info, self.data_start, self.data_end, 'M')
+        df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_DFM(path)
         
-        # df_M = pd.read_excel(os.path.join(self.root_path, self.data_path),
-        #                      index_col='date', sheet_name='df_M', header=0)
-        # p_rng_m = pd.period_range('1970-01-01', '2023-06-01', freq='m')
-        # df_M = df_M.set_index(p_rng_m)
-        # df_M = df_M.iloc[:, :].astype('float')
-        # df_M.index.name = 'date'
-
-        # # Quater
-        # df_Q = pd.read_excel(os.path.join(self.root_path, self.data_path),
-        #                      index_col='date', sheet_name='df_Q', header=0)
-        # p_rng_q = pd.period_range('1960Q2', '2023Q1', freq='Q-FEB')
-        # df_Q = df_Q.set_index(p_rng_q)
-        # df_Q = df_Q.iloc[:, :].astype('float')
-        # df_Q.index.name = 'date'
-
         cols_M = list(df_M.columns)
         cols_Q = list(df_Q.columns)
-        df_M = df_M.loc[self.data_start, self.data_end, cols_M]
-        df_Q = df_M.loc[self.data_start_Q, self.data_end_Q, cols_Q]
-        print(f"df_M.shape : {df_M.shape}")
-        print(f"df_Q.shape : {df_Q.shape}")
-        
+        df_M = df_M.loc[self.data_start_M, self.data_end_M, cols_M]
+        df_Q = df_M.loc[self.data_start_Q, self.data_end_Q, cols_Q].repeat(3)
+        print(f"df_M.shape period (start: {self.start_M} ~ end: {self.end_M}): {df_M.shape}")
+        print(f"df_Q.shape period (start: {self.start_Q} ~ end: {self.end_Q}): {df_Q.shape}")
         # print(f"df_raw.cols : {df_raw.columns}")
-        # cols.remove(self.target)
-        # cols.remove('mea_dt')
 
-        # df_raw.rename(columns={'mea_dt': 'date'}, inplace=True)
-        # target value position define
-        # df_raw = df_M[['date'] + cols + [self.target]]
-
-        num_train = int(len(df_M) * (0.7 if not self.train_only else 1))
-        num_test = int(len(df_M) * 0.2)
+        num_train = int(len(df_M) * (0.8 if not self.train_only else 1))
+        num_test = int(len(df_M) * 0.1)
         num_vali = len(df_M) - num_train - num_test
         border1s = [0, num_train - self.seq_len, len(df_M) - num_test - self.seq_len]
         border2s = [num_train, num_train + num_vali, len(df_M)]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
-        
-        num_train = int(len(df_Q) * (0.7 if not self.train_only else 1))
-        num_test = int(len(df_Q) * 0.2)
-        num_vali = len(df_Q) - num_train - num_test
-        border1s_Q = [0, num_train - (self.label_len+self.pred_len), len(df_Q) - num_test - (self.label_len+self.pred_len)]
-        border2s_Q = [num_train, num_train + num_vali, len(df_Q)]
-        border1_Q = border1s_Q[self.set_type]
-        border2_Q = border2s_Q[self.set_type]
-
 
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
@@ -131,8 +99,8 @@ class Dataset_Custom(Dataset):
                 df_data_t = df_Q[[self.target]]
 
         if self.scale:
-            train_data = df_data
-            train_data_t = df_data_t
+            train_data = df_data[border1s[0]:border2s[0]]
+            train_data_t = df_data_t[border1s[0]:border2s[0]]
             self.scaler_m.fit(train_data.values)
             data = self.scaler_m.transform(df_data.values)
             self.scaler_q.fit(train_data_t.values)
@@ -172,30 +140,37 @@ class Dataset_Custom(Dataset):
             data_stamp_t = df_stamp_t.values
 
         self.data_x = data[border1:border2]
-        self.data_y = data_t[border1_Q:border2_Q]
+        self.data_y = data_t[border1:border2]
         self.data_stamp = data_stamp
         self.data_stamp_t = data_stamp_t
 
     def __getitem__(self, index):
         s_begin = index
         s_end = s_begin + self.seq_len
-        # r_begin = s_end - self.label_len
-        r_begin = index
-        r_end = r_begin + self.pred_len + self.lable_len
+        # state period is Q freq (so, take one more time step to forward)
+        r_begin = s_end - self.label_len - 1
+        r_end = r_begin + self.lable_len + self.pred_len - 1
 
         seq_x = self.data_x[s_begin:s_end]
         seq_y = self.data_y[r_begin:r_end]
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
+        
+        # set lag seq_x
+        seq_x = self.set_lag_DFM(seq_x, self.var_info,'M')
+        seq_x_mark = self.set_lag_DFM(seq_x_mark, self.var_info,'M')
 
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
     def __len__(self):
-        return len(self.data_x) - self.seq_len - self.pred_len + 1
+        return len(self.data_x) - self.seq_len + 1
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
-
+    
+class Dataset_DFM(Dataset):
+    pass    
+    
 
 class Dataset_Pred(Dataset):
     def __init__(self, root_path, flag='pred', size=None, features='MS', data_path='custom.csv',

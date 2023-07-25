@@ -59,25 +59,28 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            outputs = self.model(batch_x)
+                            states, recon_output = self.models(batch_x)
                         else:
                             pass
 
                 else:
                     if 'BIVA' in self.args.model:
-                        outputs = self.model(batch_x)
+                        states, recon_output = self.models(batch_x)
                     else:
                         pass
 
                     f_dim = -1 if self.args.features == 'MS' else 0
-                    outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                    batch_y = batch_y[:, -self.args.pred_len:,
-                                      f_dim:].to(self.device)
-
-                pred = outputs.detach().cpu()
+                    recon_output = recon_output[:, -self.args.pred_len:, f_dim:]
+                    batch_y = batch_y[:, -self.args.pred_len:,f_dim:].to(self.device)
+                
+                input = batch_x.detach().cpu()
+                recon = recon_output.detach().cpu()
+                pred = states.detach().cpu()
                 true = batch_y.detach().cpu()
-
-                loss = criterion(pred, true)
+                
+                loss_recon = criterion(recon,input)
+                loss_states = criterion(pred,true)
+                loss = loss_recon + loss_states
 
                 total_loss.append(loss)
         total_loss = np.average(total_loss)
@@ -115,51 +118,41 @@ class Exp_Main(Exp_Basic):
                 iter_count += 1
                 model_optim.zero_grad()
                 batch_x = batch_x.float().to(self.device)
-
                 batch_y = batch_y.float().to(self.device)
-                print(f"batch_y.shape: {batch_y.shape}")
-                
+                # print(f"batch_y.shape: {batch_y.shape}")
                 batch_x_mark = batch_x_mark.float().to(self.device)
                 batch_y_mark = batch_y_mark.float().to(self.device)
 
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            # outputs = self.model(batch_x)
-                            states, recon_output, forecast = self.models(batch_x)
+                            states, recon_output = self.models(batch_x)
                         else:
                             pass
 
                         f_dim = -1 if self.args.features == 'MS' else 0
-                        outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                        batch_y_stats = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                        batch_y_for = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                        recon_output = recon_output[:, -self.args.pred_len:, f_dim:]
+                        batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                        #
                         loss_recon = criterion(recon_output,batch_x)
-                        loss_states = criterion(states,batch_y_stats)
-                        loss_forecast = criterion(forecast,batch_y_for)
-                        loss = loss_recon + loss_states + loss_forecast
+                        loss_states = criterion(states,batch_y)
+                        loss = loss_recon + loss_states
 
                         train_loss.append(loss.item())
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output, forecast = self.models(batch_x)
+                        states, recon_output = self.models(batch_x)
                     else:
                         pass
 
                     f_dim = -1 if self.args.features == 'MS' else 0
-                    outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                    
-                    batch_y_stats = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                    batch_y_for = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                    recon_output = recon_output[:, -self.args.pred_len:, f_dim:]
+                    batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                    #
                     loss_recon = criterion(recon_output,batch_x)
-                    loss_states = criterion(states,batch_y_stats)
-                    loss_forecast = criterion(forecast,batch_y_for)
-                    loss = loss_recon + loss_states + loss_forecast
+                    loss_states = criterion(states,batch_y)
+                    loss = loss_recon + loss_states
                     
                     train_loss.append(loss.item())
 
@@ -208,13 +201,14 @@ class Exp_Main(Exp_Basic):
         if test:
             print('loading model')
             self.model.load_state_dict(torch.load(os.path.join(
-                '.result/(BIVA)_checkpoints/' + self.args.model_id, 'checkpoint.pth')))
+                '/content/drive/MyDrive/ZZ/result/(BIVA)_checkpoints/' + self.args.model_id, 'checkpoint.pth')))
 
         preds = []
         trues = []
+        reconx = []
         inputx = []
         # './test_results/' + setting + '/'
-        folder_path = '/content/drive/MyDrive/ZZ/'
+        folder_path = '/content/drive/MyDrive/ZZ/result/(BIVA)_plot/' + self.args.model_id + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -227,45 +221,41 @@ class Exp_Main(Exp_Basic):
                 batch_x_mark = batch_x_mark.float().to(self.device)
                 batch_y_mark = batch_y_mark.float().to(self.device)
 
-                # decoder input
-                dec_inp = torch.zeros_like(
-                    batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat(
-                    [batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-                # encoder - decoder
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            outputs = self.model(batch_x)
+                            states, recon_output = self.models(batch_x)
                         else:
                             pass
+                        
+                        f_dim = -1 if self.args.features == 'MS' else 0
+                        recon_output = recon_output[:, -self.args.pred_len:, f_dim:]
+                        batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+
                 else:
                     if 'BIVA' in self.args.model:
-                        outputs = self.model(batch_x)
+                        states, recon_output = self.models(batch_x)
                     else:
                         pass
 
-                    f_dim = -1 if self.args.features == 'MS' else 0
-                    outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                    batch_y = batch_y[:, -self.args.pred_len:,
-                                      f_dim:].to(self.device)
+                f_dim = -1 if self.args.features == 'MS' else 0
+                recon_output = recon_output[:, -self.args.pred_len:, f_dim:]
+                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                # f_dim = -1 if self.args.features == 'MS' else 0
-                # # print(outputs.shape,batch_y.shape)
-                # outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                # batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-
-                outputs = outputs.detach().cpu().numpy()
+                recon_output = recon_output.detach().cpu().numpy()
+                states = states.detach().cpu().numpy()
                 batch_y = batch_y.detach().cpu().numpy()
 
-                pred = outputs  # outputs.detach().cpu().numpy()  # .squeeze()
+                pred = states  # outputs.detach().cpu().numpy()  # .squeeze()
                 true = batch_y  # batch_y.detach().cpu().numpy()  # .squeeze()
+                recon = recon_output
 
                 preds.append(pred)
                 trues.append(true)
+                reconx.append(recon)
                 inputx.append(batch_x.detach().cpu().numpy())
 
-                if i % 200 == 0:
+                if i % 10 == 0:
                     input = batch_x.detach().cpu().numpy()
                     gt = np.concatenate(
                         (input[0, :, -1], true[0, :, -1]), axis=0)
@@ -278,6 +268,7 @@ class Exp_Main(Exp_Basic):
         #     exit()
         preds = np.array(preds)
         trues = np.array(trues)
+        reconx = np.array(reconx)
         inputx = np.array(inputx)
 
         x_mark = np.array(batch_x_mark.cpu().numpy())
@@ -285,18 +276,18 @@ class Exp_Main(Exp_Basic):
 
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
+        reconx = reconx.reshape(-1, trues.shape[-2], trues.shape[-1])
         inputx = inputx.reshape(-1, inputx.shape[-2], inputx.shape[-1])
 
         x_mark = x_mark.reshape(-1, x_mark.shape[-2], x_mark.shape[-1])
         y_mark = y_mark.reshape(-1, y_mark.shape[-2], y_mark.shape[-1])
 
         # result save
-        folder_path = './(BIVA)_results/' + self.args.model_id + '/'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+        save_path = '/content/drive/MyDrive/ZZ/result/(BIVA)_result/' + self.args.model_id + '/'
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
 
-        mae, mse, rmse, mape, mspe, rse, corr = metric(
-            preds, trues)
+        mae, mse, rmse, mape, mspe, rse, corr = metric(preds, trues)
         print('mse:{}, mae:{}, rse:{}, corr:{}'.format(mse, mae, rse, corr))
         f = open("result.txt", 'a')
         f.write(setting + "  \n")
@@ -305,13 +296,14 @@ class Exp_Main(Exp_Basic):
         f.write('\n')
         f.close()
 
-        np.save(folder_path + 'BIVA_metrics.npy',
+        np.save(save_path + 'BIVA_metrics.npy',
                 np.array([mae, mse, rmse, mape, mspe, rse, corr]))
-        np.save(folder_path + 'BIVA_pred.npy', preds)
-        np.save(folder_path + 'BIVA_trues.npy', trues)
-        np.save(folder_path + 'BIVA_inputs.npy', inputx)
-        np.save(folder_path + 'x_mark.npy', x_mark)
-        np.save(folder_path + 'y_mark.npy', y_mark)
+        np.save(save_path + 'BIVA_pred.npy', preds)
+        np.save(save_path + 'BIVA_trues.npy', trues)
+        np.save(save_path + 'BIVA_recons.npy',reconx)
+        np.save(save_path + 'BIVA_inputs.npy', inputx)
+        np.save(save_path + 'x_mark.npy', x_mark)
+        np.save(save_path + 'y_mark.npy', y_mark)
         return preds, trues, inputx, mae, mse, rmse, mape, mspe, rse, corr
 
     def predict(self, setting, load=False):
