@@ -49,24 +49,25 @@ class Exp_Main(Exp_Basic):
         total_loss = []
         self.model.eval()
         with torch.no_grad():
-            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
+            # for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
+            for i, (batch_x, batch_y) in enumerate(vali_loader):
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float()
 
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
+                # batch_x_mark = batch_x_mark.float().to(self.device)
+                # batch_y_mark = batch_y_mark.float().to(self.device)
 
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output = self.models(batch_x)
+                            states, recon_output = self.model(batch_x)
                         else:
                             pass
 
                 else:
                     if 'BIVA' in self.args.model:
-                       states, recon_output = self.models(batch_x)
-                       states, recon_output, forecast = self.model(batch_x)
+                       states, recon_output = self.model(batch_x)
+                       # states, recon_output, forecast = self.model(batch_x)
                     else:
                         pass
 
@@ -116,19 +117,20 @@ class Exp_Main(Exp_Basic):
 
             self.model.train()
             epoch_time = time.time()
-            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(train_loader):
+            # for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(train_loader):
+            for i, (batch_x, batch_y) in enumerate(train_loader):
                 iter_count += 1
                 model_optim.zero_grad()
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float().to(self.device)
                 # print(f"batch_y.shape: {batch_y.shape}")
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
+                # batch_x_mark = batch_x_mark.float().to(self.device)
+                # batch_y_mark = batch_y_mark.float().to(self.device)
 
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output = self.models(batch_x)
+                            states, recon_output = self.model(batch_x)
                         else:
                             pass
 
@@ -144,7 +146,7 @@ class Exp_Main(Exp_Basic):
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output = self.models(batch_x)
+                        states, recon_output = self.model(batch_x)
                     else:
                         pass
 
@@ -216,17 +218,18 @@ class Exp_Main(Exp_Basic):
 
         self.model.eval()
         with torch.no_grad():
-            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
+            # for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
+            for i, (batch_x, batch_y) in enumerate(test_loader):
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float().to(self.device)
 
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
+                # batch_x_mark = batch_x_mark.float().to(self.device)
+                # batch_y_mark = batch_y_mark.float().to(self.device)
 
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output = self.models(batch_x)
+                            states, recon_output = self.model(batch_x)
                         else:
                             pass
                         
@@ -236,7 +239,7 @@ class Exp_Main(Exp_Basic):
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output = self.models(batch_x)
+                        states, recon_output = self.model(batch_x)
                     else:
                         pass
 
@@ -273,16 +276,16 @@ class Exp_Main(Exp_Basic):
         reconx = np.array(reconx)
         inputx = np.array(inputx)
 
-        x_mark = np.array(batch_x_mark.cpu().numpy())
-        y_mark = np.array(batch_y_mark.cpu().numpy())
+        # x_mark = np.array(batch_x_mark.cpu().numpy())
+        # y_mark = np.array(batch_y_mark.cpu().numpy())
 
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
         reconx = reconx.reshape(-1, trues.shape[-2], trues.shape[-1])
         inputx = inputx.reshape(-1, inputx.shape[-2], inputx.shape[-1])
 
-        x_mark = x_mark.reshape(-1, x_mark.shape[-2], x_mark.shape[-1])
-        y_mark = y_mark.reshape(-1, y_mark.shape[-2], y_mark.shape[-1])
+        # x_mark = x_mark.reshape(-1, x_mark.shape[-2], x_mark.shape[-1])
+        # y_mark = y_mark.reshape(-1, y_mark.shape[-2], y_mark.shape[-1])
 
         # result save
         save_path = '/content/drive/MyDrive/ZZ/result/(BIVA)_result/' + self.args.model_id + '/'
@@ -304,8 +307,8 @@ class Exp_Main(Exp_Basic):
         np.save(save_path + 'BIVA_trues.npy', trues)
         np.save(save_path + 'BIVA_recons.npy',reconx)
         np.save(save_path + 'BIVA_inputs.npy', inputx)
-        np.save(save_path + 'x_mark.npy', x_mark)
-        np.save(save_path + 'y_mark.npy', y_mark)
+        # np.save(save_path + 'x_mark.npy', x_mark)
+        # np.save(save_path + 'y_mark.npy', y_mark)
         return preds, trues, inputx, mae, mse, rmse, mape, mspe, rse, corr
 
     def predict(self, setting, load=False):
@@ -323,8 +326,8 @@ class Exp_Main(Exp_Basic):
             for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(pred_loader):
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float()
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
+                # batch_x_mark = batch_x_mark.float().to(self.device)
+                # batch_y_mark = batch_y_mark.float().to(self.device)
 
                 # decoder input
                 dec_inp = torch.zeros(

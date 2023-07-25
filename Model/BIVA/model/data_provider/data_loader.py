@@ -122,6 +122,7 @@ class Dataset_BIVA(Dataset):
 
         # data_stamp_data_M
         df_stamp =  data.index
+        # df_stamp['date'] = pd.to_datetime(df_stamp.date)
         if self.timeenc == 0:
             df_stamp['month'] = df_stamp.apply(lambda row: row.month, 1)
             df_stamp['day'] = df_stamp.apply(lambda row: row.day, 1)
@@ -129,12 +130,13 @@ class Dataset_BIVA(Dataset):
             df_stamp['hour'] = df_stamp.apply(lambda row: row.hour, 1)
             data_stamp = df_stamp_t.drop(['date'], 1).values
         elif self.timeenc == 1:
-            data_stamp = time_features(df_stamp.values, freq=self.freq)
+            data_stamp = time_features(pd.to_datetime(df_stamp.values), freq=self.freq)
             data_stamp = data_stamp.transpose(1, 0)
             data_stamp = df_stamp.values
 
         # data_stamp_target_Q
         df_stamp_t = data_t.index # df_Q.index[border1:border2]
+        # df_stamp_t['date'] = pd.to_datetime(df_stamp_t.date)
         if self.timeenc == 0:
             df_stamp_t['month'] = df_stamp_t.apply(lambda row: row.month, 1)
             df_stamp_t['day'] = df_stamp_t.apply(lambda row: row.day, 1)
@@ -142,9 +144,9 @@ class Dataset_BIVA(Dataset):
             df_stamp_t['hour'] = df_stamp_t.apply(lambda row: row.hour, 1)
             data_stamp_t = df_stamp_t.drop(['date'], 1).values
         elif self.timeenc == 1:
-            data_stamp_t = time_features(pd.to_datetime(df_stamp_t['date'].values), freq=self.freq)
+            data_stamp_t = time_features(pd.to_datetime(df_stamp_t.values), freq=self.freq)
             data_stamp_t = data_stamp_t.transpose(1, 0)
-            data_stamp_t = df_stamp_t #.values
+            data_stamp_t = df_stamp_t.values
 
         self.data_x = data[border1:border2]
         self.data_y = data_t[border1:border2]
@@ -160,12 +162,12 @@ class Dataset_BIVA(Dataset):
 
         seq_x = self.data_x[s_begin:s_end]
         seq_y = self.data_y[r_begin:r_end].values
-        seq_x_mark = self.data_stamp[s_begin:s_end].values
-        seq_y_mark = self.data_stamp[r_begin:r_end].values
+        seq_x_mark = self.data_stamp[s_begin:s_end]
+        seq_y_mark = self.data_stamp[r_begin:r_end]
         # set lag seq_x
         seq_x = self.set_lag_missing(seq_x, self.var_info,'M').values
         
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
+        return seq_x, seq_y, #seq_x_mark, seq_y_mark
 
     def __len__(self):
         return len(self.data_x) - self.seq_len + 1
