@@ -4,7 +4,7 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from utils.tools import StandardScaler, load_data_DFM, set_lag_DFM, repeat_row
+from utils.tools import StandardScaler, load_data_DFM, set_lag_missing, repeat_row
 from utils.timefeatures import time_features
 
 import warnings
@@ -43,7 +43,7 @@ class Dataset_BIVA(Dataset):
         self.end_Q = '2023-03'
         
         self.load_data_DFM = load_data_DFM
-        self.set_lag_DFM = set_lag_DFM
+        self.set_lag_missing = set_lag_missing
         self.repeat_row = repeat_row
         
         self.__read_data__()
@@ -102,49 +102,52 @@ class Dataset_BIVA(Dataset):
 
         if self.scale:
             train_data = df_data[border1s[0]:border2s[0]]
+            train_cols = train_data.columns
+            train_index = train_data.index
             train_data_t = df_data_t[border1s[0]:border2s[0]]
+            train_t_cols = train_data_t.columns
+            train_t_index = train_data_t.index
             self.scaler_m.fit(train_data.values)
             data = self.scaler_m.transform(df_data.values)
             self.scaler_q.fit(train_data_t.values)
             data_t = self.scaler_q.transform(df_data_t.values)
+            data = pd.DataFrame(data,columns=train_cols, index=train_index)
+            data_t = pd.DataFrame(data_t,columns=train_t_cols, index=train_t_index)
+            
         else:
-            data = df_data.values
-            data_t = df_data_t.values
+            data = df_data #.values
+            data_t = df_data_t #.values
 
         # data_stamp_data_M
-        df_stamp = df_M.index  # [border1:border2]
-        # df_stamp = pd.to_datetime(df_stamp)
+        df_stamp =  data.index # df_M.index[border1:border2]
         if self.timeenc == 0:
             df_stamp['month'] = df_stamp.apply(lambda row: row.month, 1)
             df_stamp['day'] = df_stamp.apply(lambda row: row.day, 1)
             df_stamp['weekday'] = df_stamp.apply(lambda row: row.weekday(), 1)
             df_stamp['hour'] = df_stamp.apply(lambda row: row.hour, 1)
-            data_stamp = df_stamp.values
+            data_stamp = df_stamp #.values
         elif self.timeenc == 1:
             # data_stamp = time_features(df_stamp.values, freq=self.freq)
             # data_stamp = data_stamp.transpose(1, 0)
-            data_stamp = df_stamp.values
+            data_stamp = df_stamp #.values
 
         # data_stamp_target_Q
-        df_stamp_t = df_Q.index
-        # df_stamp_t = df_Q[['date']]  # [border1:border2]
-        # df_stamp_t['date'] = pd.to_datetime(df_stamp_t.date)
+        df_stamp_t = data_t.index # df_Q.index[border1:border2]
         if self.timeenc == 0:
             df_stamp_t['month'] = df_stamp_t.apply(lambda row: row.month, 1)
-            # df_stamp_t['month'] = df_stamp_t.date.apply(lambda row: row.month, 1)
             df_stamp_t['day'] = df_stamp_t.apply(lambda row: row.day, 1)
             df_stamp_t['weekday'] = df_stamp_t.apply(lambda row: row.weekday(), 1)
             df_stamp_t['hour'] = df_stamp_t.apply(lambda row: row.hour, 1)
-            data_stamp_t = df_stamp_t.drop(['date'], 1).values
+            data_stamp_t = df_stamp_t.drop(['date'], 1) #.values
         elif self.timeenc == 1:
             # data_stamp_t = time_features(pd.to_datetime(df_stamp_t['date'].values), freq=self.freq)
             # data_stamp_t = data_stamp_t.transpose(1, 0)
-            data_stamp_t = df_stamp_t.values
+            data_stamp_t = df_stamp_t #.values
 
         self.data_x = data[border1:border2]
         self.data_y = data_t[border1:border2]
-        self.data_stamp = data_stamp
-        self.data_stamp_t = data_stamp_t
+        self.data_stamp = data_stamp[border1:border2]
+        self.data_stamp_t = data_stamp_t[border1:border2]
 
     def __getitem__(self, index):
         s_begin = index
@@ -159,10 +162,10 @@ class Dataset_BIVA(Dataset):
         seq_y_mark = self.data_stamp[r_begin:r_end]
         
         # set lag seq_x
-        seq_x = self.set_lag_DFM(seq_x, self.var_info,'M')
-        seq_x_mark = self.set_lag_DFM(seq_x_mark, self.var_info,'M')
-
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
+        seq_x = self.set_lag_missing(seq_x, self.var_info,'M')
+        seq_x_mark = self.set_lag_missing(seq_x_mark, self.var_info,'M')
+        
+        return seq_x.values, seq_y.values, seq_x_mark.values, seq_y_mark.values
 
     def __len__(self):
         return len(self.data_x) - self.seq_len + 1

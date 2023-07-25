@@ -91,7 +91,7 @@ def load_data_DFM(data_path):
     df_M_trans = transform_adf(df_M, var_info,'M')
     return df_Q, df_Q_trans, df_M, df_M_trans, var_info
 
-def set_lag_DFM(df_trans, var_info, freq):
+def set_lag_missing(df_trans, var_info,freq):
     df_set_lag = df_trans.copy()
     if freq == 'M':
       for col in df_trans.columns:
@@ -102,9 +102,8 @@ def set_lag_DFM(df_trans, var_info, freq):
           df_set = df_set[:-(lag)]
         else:
           df_set = df_set
-        # print(f"df_set {col} : {df_set}")
         df_set_lag[col] = df_set
-      df_set_lag = df_set_lag    
+      df_set_lag = df_set_lag
     else:
       df_set = df_trans
       df_set_lag = df_set
