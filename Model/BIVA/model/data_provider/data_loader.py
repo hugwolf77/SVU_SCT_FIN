@@ -61,8 +61,8 @@ class Dataset_BIVA(Dataset):
         cols_Q = list(df_Q.columns)
         cols_Q.remove(self.target)
         df_Q = df_Q[cols_Q + [self.target]]
-        df_M = df_M.loc[self.start_M, self.end_M, cols_M]
-        df_Q = df_M.loc[self.start_Q, self.end_Q, cols_Q].repeat(3)
+        df_M = df_M.loc[self.start_M:self.end_M, cols_M]
+        df_Q = df_M.loc[self.start_Q:self.end_Q, cols_Q].repeat(3)
         print(f"df_M.shape period (start: {self.start_M} ~ end: {self.end_M}): {df_M.shape}")
         print(f"df_Q.shape period (start: {self.start_Q} ~ end: {self.end_Q}): {df_Q.shape}")
         # print(f"df_raw.cols : {df_raw.columns}")
