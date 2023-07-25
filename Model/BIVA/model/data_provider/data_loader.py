@@ -4,7 +4,7 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from utils.tools import StandardScaler, load_data_DFM, set_lag_missing, repeat_row
+from utils.tools import StandardScaler, load_data_timeindex, load_data_DFM, set_lag_missing, repeat_row
 from utils.timefeatures import time_features
 
 import warnings
@@ -43,6 +43,7 @@ class Dataset_BIVA(Dataset):
         self.end_Q = '2023-03'
         
         self.load_data_DFM = load_data_DFM
+        self.load_data_timeindex = load_data_timeindex
         self.set_lag_missing = set_lag_missing
         self.repeat_row = repeat_row
         
@@ -55,7 +56,8 @@ class Dataset_BIVA(Dataset):
         
         path = os.path.join(self.root_path, self.data_path)
         
-        df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_DFM(path)
+        # df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_DFM(path)
+        df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_timeindex(path)
         
         cols_M = list(df_M.columns)
         cols_Q = list(df_Q.columns)
@@ -63,8 +65,8 @@ class Dataset_BIVA(Dataset):
         df_Q = df_Q[cols_Q + [self.target]]
         df_M = df_M.loc[self.start_M:self.end_M]
         df_Q = df_Q.loc[self.start_Q:self.end_Q].apply(repeat_row, axis=0)
-        print(f"df_M.shape period (start: {self.start_M} ~ end: {self.end_M}): {df_M.shape}")
-        print(f"df_Q.shape period (start: {self.start_Q} ~ end: {self.end_Q}): {df_Q.shape}")
+        # print(f"df_M.shape period (start: {self.start_M} ~ end: {self.end_M}): {df_M.shape}")
+        # print(f"df_Q.shape period (start: {self.start_Q} ~ end: {self.end_Q}): {df_Q.shape}")
         # print(f"df_raw.cols : {df_raw.columns}")
 
         num_train = int(len(df_M) * 0.8) #(0.8 if not self.train_only else 1))

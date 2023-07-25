@@ -32,7 +32,7 @@ def adf_test(transformed):
         test_result = "{}".format("N")
     return test_result
         
-def transform_adf(df, var_info, freq):
+def transform_adf(df, var_info):
     for col in df.columns:
         # print(f"transform_column : {col}")
         diff = var_info[var_info['ID'] == col]['transform'].values[0]
@@ -87,11 +87,32 @@ def load_data_DFM(data_path):
     # Variable Info
     var_info = pd.read_excel(data_path, sheet_name='df_var_info', header=0)
     # diff transform for stationary
-    df_Q_trans = transform_adf(df_Q, var_info,'Q')
-    df_M_trans = transform_adf(df_M, var_info,'M')
+    df_Q_trans = transform_adf(df_Q, var_info)
+    df_M_trans = transform_adf(df_M, var_info)
+    return df_Q, df_Q_trans, df_M, df_M_trans, var_info
+'''
+    - pytorch dataloader default collate_fn fail pandas period_Index
+'''
+def load_data_timeindex(data_path):
+    # load data
+    # Quatery
+    df_Q = pd.read_excel(data_path, index_col='date', sheet_name='df_Q', header=0)
+    df_Q = df_Q.iloc[:,:].astype('float')
+    df_Q.index.name = 'date'
+    # df_Q = remove_outliers(df_Q)
+    # Monthly
+    df_M = pd.read_excel(data_path, index_col='date', sheet_name='df_M', header=0)
+    df_M = df_M.iloc[:,:].astype('float')
+    df_M.index.name = 'date'
+    # df_M = remove_outliers(df_M)
+    # Variable Info
+    var_info = pd.read_excel(data_path, sheet_name='df_var_info', header=0)
+    # diff transform for stationary
+    df_Q_trans = transform_adf(df_Q, var_info)
+    df_M_trans = transform_adf(df_M, var_info)
     return df_Q, df_Q_trans, df_M, df_M_trans, var_info
 
-def set_lag_missing(df_trans, var_info,freq):
+def set_lag_missing(df_trans, var_info, freq):
     df_set_lag = df_trans.copy()
     if freq == 'M':
       for col in df_trans.columns:
