@@ -157,14 +157,11 @@ class Dataset_BIVA(Dataset):
         r_end = r_begin + self.label_len + self.pred_len - 1
 
         seq_x = self.data_x[s_begin:s_end]
-        seq_y = self.data_y[r_begin:r_end]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
-        
+        seq_y = self.data_y[r_begin:r_end].values
+        seq_x_mark = self.data_stamp[s_begin:s_end].values
+        seq_y_mark = self.data_stamp[r_begin:r_end].values
         # set lag seq_x
-        seq_x = self.set_lag_missing(seq_x, self.var_info,'M')
-        
-        # seq_x, seq_y, seq_x_mark, seq_y_mark = seq_x.values, seq_y.values, seq_x_mark.values, seq_y_mark.values
+        seq_x = self.set_lag_missing(seq_x, self.var_info,'M').values
         
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
