@@ -164,7 +164,7 @@ class Dataset_BIVA(Dataset):
         # set lag seq_x
         seq_x = self.set_lag_missing(seq_x, self.var_info,'M')
         
-        seq_x, seq_y, seq_x_mark, seq_y_mark = seq_x.values, seq_y.values, seq_x_mark.values, seq_y_mark.values
+        # seq_x, seq_y, seq_x_mark, seq_y_mark = seq_x.values, seq_y.values, seq_x_mark.values, seq_y_mark.values
         
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
