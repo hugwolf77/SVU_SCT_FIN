@@ -102,17 +102,17 @@ class Dataset_BIVA(Dataset):
 
         if self.scale:
             train_data = df_data[border1s[0]:border2s[0]]
-            train_cols = train_data.columns
-            train_index = train_data.index
+            df_data_cols = df_data.columns
+            df_data_index = df_data.index
             train_data_t = df_data_t[border1s[0]:border2s[0]]
-            train_t_cols = train_data_t.columns
-            train_t_index = train_data_t.index
+            df_data_t_cols = df_data_t.columns
+            df_data_t_index = df_data_t.index
             self.scaler_m.fit(train_data.values)
             data = self.scaler_m.transform(df_data.values)
             self.scaler_q.fit(train_data_t.values)
             data_t = self.scaler_q.transform(df_data_t.values)
-            data = pd.DataFrame(data,columns=train_cols, index=train_index)
-            data_t = pd.DataFrame(data_t,columns=train_t_cols, index=train_t_index)
+            data = pd.DataFrame(data,columns=df_data_cols, index=df_data_index)
+            data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
             
         else:
             data = df_data #.values
