@@ -151,7 +151,7 @@ class Dataset_BIVA(Dataset):
         s_end = s_begin + self.seq_len
         # state period is Q freq (so, take one more time step to forward)
         r_begin = s_end - self.label_len - 1
-        r_end = r_begin + self.lable_len + self.pred_len - 1
+        r_end = r_begin + self.label_len + self.pred_len - 1
 
         seq_x = self.data_x[s_begin:s_end]
         seq_y = self.data_y[r_begin:r_end]
