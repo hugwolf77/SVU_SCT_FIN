@@ -38,7 +38,7 @@ class Dataset_BIVA(Dataset):
         self.root_path = root_path
         self.data_path = data_path
         self.start_M = '2000-01'
-        self.end_M = '2022-12'
+        self.end_M = '2023-03'
         self.start_Q = '1999-03'
         self.end_Q = '2023-03'
         
