@@ -11,7 +11,7 @@ from torch import optim
 import torch.nn as nn
 import torch
 
-import pytorch_model_summary as pms
+# import pytorch_model_summary as pms
 # from torchinfo import summary
 
 import pandas as pd
@@ -25,8 +25,8 @@ warnings.filterwarnings('ignore')
 class Exp_Main(Exp_Basic):
     def __init__(self, args):
         super(Exp_Main, self).__init__(args)
-        print(pms.summary(self.model, torch.zeros(self.args.batch_size, self.args.seq_len, self.args.channels),
-                            max_depth=None, show_parent_layers=True, show_input=True))    
+        # print(pms.summary(self.model, torch.zeros(self.args.batch_size, self.args.seq_len, self.args.channels),
+        #                     max_depth=None, show_parent_layers=True, show_input=True))    
 
     def _build_model(self):
         model_dict = {
