@@ -31,7 +31,6 @@ def data_provider(args, flag):
 
     data_set = Data(
         root_path=args.root_path,
-        period = args.period,
         data_path=args.data_path,
         size=[args.seq_len, args.label_len, args.pred_len],
         flag=flag,
