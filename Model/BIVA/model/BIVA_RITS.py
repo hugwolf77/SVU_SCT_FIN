@@ -69,13 +69,13 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         self.seq_len = args.seq_len
-        self.input_size = args.channels
+        self.input_size = args.channels 
         self.rnn_hid_size = args.rnn_hid_size
 
         self.build()
 
     def build(self):
-        self.rnn_cell = nn.LSTMCell(self.input_size, self.rnn_hid_size)
+        self.rnn_cell = nn.LSTMCell(self.input_size*2, self.rnn_hid_size)
 
         self.temp_decay_h = TemporalDecay(
             input_size=self.input_size, output_size=self.rnn_hid_size, diag=False)
@@ -90,23 +90,25 @@ class Model(nn.Module):
 
         # self.delta_calc()
 
-    def delta_calc(self, mask):
+    def delta_calc(self, masks):
         # just 1step is time-strimp 1 month step
-        delta = torch.zeros_like(mask)
+        delta = torch.zeros_like(masks)
         decay = 1
-        for i in range(mask.shape[0]):
-            for d in range(mask.shape[1]):
-                if d == 0:
-                    delta[i, d] = 0
-                elif d == 1:
-                    decay = 1
-                    delta[i, d] = decay
-                elif mask[i, d-1] == 0:
-                    decay += 1
-                    delta[i, d] = delta[i, d]+decay
-                elif mask[i, d-1] == 1:
-                    decay = 1
-                    delta[i, d] = decay
+        # print(f"delta.shape : {delta.shape}")
+        for b in range(masks.shape[0]):
+          for i in range(masks.shape[1]):
+              for d in range(masks.shape[1]):
+                  if d == 0:
+                      delta[b,i,d] = 0
+                  elif d == 1:
+                      decay = 1
+                      delta[b,i,d] = decay
+                  elif masks[b,i,d-1] == 0:
+                      decay += 1
+                      delta[b,i,d] = delta[b,i,d]+decay
+                  elif masks[b,i,d-1] == 1:
+                      decay = 1
+                      delta[b,i,d] = decay
         return delta
 
     def forward(self, data):
@@ -115,6 +117,7 @@ class Model(nn.Module):
 
         values = data
         masks = torch.logical_not(torch.isnan(data)).float()
+        # print(f"masks.shape: {masks.shape}")
         # just 1step is time-strimp 1 month step
         deltas = self.delta_calc(masks)
 
@@ -137,12 +140,12 @@ class Model(nn.Module):
             h = h * gamma_h
             x_h = self.hist_reg(h)
 
-            x_c = m * x + (1 - m) * x_h
+            x_c = torch.nan_to_num(m * x) + (1 - m) * x_h
             z_h = self.feat_reg(x_c)
 
             alpha = self.weight_combine(torch.cat([gamma_x, m], dim=1))
             c_h = alpha * z_h + (1 - alpha) * x_h
-            c_c = m * x + (1 - m) * c_h
+            c_c = torch.nan_to_num(m * x) + (1 - m) * c_h
 
             inputs = torch.cat([c_c, m], dim=1)
             h, c = self.rnn_cell(inputs, (h, c))

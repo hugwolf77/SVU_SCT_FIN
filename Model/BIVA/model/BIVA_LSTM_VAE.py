@@ -58,7 +58,7 @@ class Model(nn.Module):
         # z = z.unsqueeze(1).repeat(1, self.seq_len, 1)
 
         out, _ = self.decoder_lstm_1(z)
-        output, _ = self.decoder_lstm_1(out)
+        output, _ = self.decoder_lstm_2(out)
         # output = self.relu(output)
         output = self.output_fc(output)
         return output
