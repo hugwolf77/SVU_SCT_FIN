@@ -37,7 +37,7 @@ class Dataset_BIVA(Dataset):
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
-        self.period = {'M': ['2000-01','2023-03'], 'Q':['2000-01','2023-03']}
+        self.period = {'M': ['2000-01','2023-03'], 'Q':['1999-03','2023-03']}
         self.start_M = self.period['M'][0]
         self.end_M = self.period['M'][1]
         self.start_Q = self.period['Q'][0]
