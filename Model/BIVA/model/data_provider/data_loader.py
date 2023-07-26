@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 
 
 class Dataset_BIVA(Dataset):
-    def __init__(self, root_path, flag='train', size=None, features='MS', data_path='custom.csv',
+    def __init__(self, root_path, prediod, flag='train', size=None, features='MS', data_path='custom.csv',
                  target='GDP', scale=True, inverse=False, timeenc=0, freq='m', cols=None):
         # info
         if size == None:
@@ -37,10 +37,10 @@ class Dataset_BIVA(Dataset):
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
-        self.start_M = '2000-01'
-        self.end_M = '2023-03'
-        self.start_Q = '1999-03'
-        self.end_Q = '2023-03'
+        self.start_M = prediod['M'][0]
+        self.end_M = prediod['M'][1]
+        self.start_Q = prediod['Q'][0]
+        self.end_Q = prediod['Q'][1]
         
         self.load_data_DFM = load_data_DFM
         self.load_data_timeindex = load_data_timeindex
