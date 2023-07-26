@@ -38,10 +38,10 @@ class Dataset_BIVA(Dataset):
         self.root_path = root_path
         self.data_path = data_path
         self.period = {'M': ['2000-01','2023-03'], 'Q':['2000-01','2023-03']}
-        self.start_M = self.preiod['M'][0]
-        self.end_M = self.preiod['M'][1]
-        self.start_Q = self.preiod['Q'][0]
-        self.end_Q = self.preiod['Q'][1]
+        self.start_M = self.period['M'][0]
+        self.end_M = self.period['M'][1]
+        self.start_Q = self.period['Q'][0]
+        self.end_Q = self.period['Q'][1]
         
         self.load_data_DFM = load_data_DFM
         self.load_data_timeindex = load_data_timeindex
