@@ -93,22 +93,16 @@ class Model(nn.Module):
     def delta_calc(self, masks):
         # just 1step is time-strimp 1 month step
         delta = torch.zeros_like(masks)
-        decay = 1
         # print(f"delta.shape : {delta.shape}")
         for b in range(masks.shape[0]):
-          for i in range(masks.shape[1]):
-              for d in range(masks.shape[1]):
-                  if d == 0:
-                      delta[b,i,d] = 0
-                  elif d == 1:
-                      decay = 1
-                      delta[b,i,d] = decay
-                  elif masks[b,i,d-1] == 0:
-                      decay += 1
-                      delta[b,i,d] = delta[b,i,d]+decay
-                  elif masks[b,i,d-1] == 1:
-                      decay = 1
-                      delta[b,i,d] = decay
+          for t in range(masks.shape[1]):
+              for d in range(masks.shape[2]):
+                  if t == 0:
+                      delta[b,t,d] = 0
+                  elif masks[b,t-1,d] == 0 and t > 0:
+                      delta[b,t,d] = delta[b,t,d-1]+t-(t-1)
+                  elif masks[b,t,d-1] == 1 and t > 0:
+                      delta[b,t,d] = t - (t-1)
         return delta
 
     def forward(self, data):
