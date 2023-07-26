@@ -182,14 +182,14 @@ class Exp_Main(Exp_Basic):
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
-            early_stopping(vali_loss, self.model, path)
+            early_stopping(vali_loss, self.model, path, self.args.model_id)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
 
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 
-        best_model_path = path + '/' + 'checkpoint.pth'
+        best_model_path = path + '/' + self.args.model_id, '_checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
 
         return self.model
@@ -200,7 +200,7 @@ class Exp_Main(Exp_Basic):
         if test:
             print('loading model')
             self.model.load_state_dict(torch.load(os.path.join(
-                '/content/drive/MyDrive/ZZ/Code_02/result/(BIVA)_checkpoints/' + self.args.model_id, '_checkpoint.pth')))
+                '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_checkpoints/' + self.args.model_id, '_checkpoint.pth')))
 
         preds = []
         trues = []
@@ -208,7 +208,7 @@ class Exp_Main(Exp_Basic):
         imputation = []
         inputx = []
         # './test_results/' + setting + '/'
-        folder_path = '/content/drive/MyDrive/ZZ/Code_02/result/(BIVA)_plot/' + self.args.model_id + '/'
+        folder_path = '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_plot/' + self.args.model_id + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -281,7 +281,7 @@ class Exp_Main(Exp_Basic):
         # y_mark = y_mark.reshape(-1, y_mark.shape[-2], y_mark.shape[-1])
 
         # result save
-        save_path = '/content/drive/MyDrive/ZZ/Code_02/result/(BIVA)_result/' + self.args.model_id + '/'
+        save_path = '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_result/' + self.args.model_id + '/'
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
@@ -309,8 +309,8 @@ class Exp_Main(Exp_Basic):
         pred_data, pred_loader = self._get_data(flag='pred')
 
         if load:
-            path = os.path.join(self.args.checkpoints, setting)
-            best_model_path = path + '/' + 'checkpoint.pth'
+            path = os.path.join(self.args.checkpoints)
+            best_model_path = path + '/' + self.args.model_id, '_checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
         preds = []
