@@ -25,8 +25,10 @@ warnings.filterwarnings('ignore')
 class Exp_Main(Exp_Basic):
     def __init__(self, args):
         super(Exp_Main, self).__init__(args)
+        print(pms.summary(self.model, torch.zeros(self.args.batch_size, self.args.seq_len, self.args.channels),
+                            max_depth=None, show_parent_layers=True, show_input=True))    
 
-    def _build_model(self, args):
+    def _build_model(self):
         model_dict = {
             'BIVA': BIVA,
             # 'em_DFM': em_DFM,
@@ -36,8 +38,6 @@ class Exp_Main(Exp_Basic):
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         
-        print(pms.summary(model, torch.zeros(args.batch_size, args.seq_len, args.channels),
-                          max_depth=None, show_parent_layers=True, show_input=True))    
         
         return model
 
@@ -60,7 +60,7 @@ class Exp_Main(Exp_Basic):
             # for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
             for i, (batch_x, batch_y) in enumerate(vali_loader):
                 batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float()
+                batch_y = batch_y.float().to(self.device)
                 # batch_x_mark = batch_x_mark.float().to(self.device)
                 # batch_y_mark = batch_y_mark.float().to(self.device)
 
@@ -106,6 +106,7 @@ class Exp_Main(Exp_Basic):
             os.makedirs(path)
 
         time_now = time.time()
+        
 
         train_steps = len(train_loader)
         early_stopping = EarlyStopping(
