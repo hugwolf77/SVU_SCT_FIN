@@ -10,6 +10,10 @@ from torch.utils.tensorboard import SummaryWriter
 from torch import optim
 import torch.nn as nn
 import torch
+
+import pytorch_model_summary as pms
+# from torchinfo import summary
+
 import pandas as pd
 import numpy as np
 import os
@@ -22,7 +26,7 @@ class Exp_Main(Exp_Basic):
     def __init__(self, args):
         super(Exp_Main, self).__init__(args)
 
-    def _build_model(self):
+    def _build_model(self, args):
         model_dict = {
             'BIVA': BIVA,
             # 'em_DFM': em_DFM,
@@ -31,6 +35,10 @@ class Exp_Main(Exp_Basic):
 
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
+        
+        print(pms.summary(model, torch.zeros(args.batch_size, args.seq_len, args.channels),
+                          max_depth=None, show_parent_layers=True, show_input=True))    
+        
         return model
 
     def _get_data(self, flag):
@@ -78,10 +86,10 @@ class Exp_Main(Exp_Basic):
                 pred = states.detach().cpu()
                 true = batch_y.detach().cpu()
                 
-                loss_recon = criterion(recon,imputed)
+                # loss_recon = criterion(recon,imputed)
                 loss_states = criterion(pred,true)
-                loss = loss_recon + loss_states
-                loss = criterion(pred, true)
+                # loss = loss_recon + loss_states
+                loss = loss_states
                 total_loss.append(loss)
 
         total_loss = np.average(total_loss)
@@ -93,7 +101,7 @@ class Exp_Main(Exp_Basic):
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
 
-        path = os.path.join(self.args.checkpoints, setting)
+        path = os.path.join(self.args.checkpoints)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -134,9 +142,10 @@ class Exp_Main(Exp_Basic):
                         f_dim = -1 if self.args.features == 'MS' else 0
                         batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                        loss_recon = criterion(recon_output,imputed)
+                        # loss_recon = criterion(recon_output,imputed)
                         loss_states = criterion(states,batch_y)
-                        loss = loss_recon + loss_states
+                        # loss = loss_recon + loss_states
+                        loss = loss_states
 
                         train_loss.append(loss.item())
 
@@ -149,9 +158,10 @@ class Exp_Main(Exp_Basic):
                     f_dim = -1 if self.args.features == 'MS' else 0
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                    loss_recon = criterion(recon_output,imputed)
+                    # loss_recon = criterion(recon_output,imputed)
                     loss_states = criterion(states,batch_y)
-                    loss = loss_recon + loss_states
+                    # loss = loss_recon + loss_states
+                    loss = loss_states
                     
                     train_loss.append(loss.item())
 
@@ -189,18 +199,21 @@ class Exp_Main(Exp_Basic):
 
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 
-        best_model_path = path + '/' + self.args.model_id, '_checkpoint.pth'
+        best_model_path = path + self.args.model_id + '_checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
 
         return self.model
 
     def test(self, setting, test=0):
         test_data, test_loader = self._get_data(flag='test')
+        path = os.path.join(self.args.checkpoints)
+        if not os.path.exists(path):
+            os.makedirs(path)
 
         if test:
             print('loading model')
             self.model.load_state_dict(torch.load(os.path.join(
-                '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_checkpoints/' + self.args.model_id, '_checkpoint.pth')))
+                path + self.args.model_id, '_checkpoint.pth')))
 
         preds = []
         trues = []
@@ -310,7 +323,7 @@ class Exp_Main(Exp_Basic):
 
         if load:
             path = os.path.join(self.args.checkpoints)
-            best_model_path = path + '/' + self.args.model_id, '_checkpoint.pth'
+            best_model_path = path + self.args.model_id, '_checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
         preds = []
