@@ -1,5 +1,5 @@
 
-from model import BIVA  # ,em_DFM
+from model import BIVA
 
 import matplotlib.pyplot as plt
 from utils.metrics import metric
@@ -7,12 +7,11 @@ from utils.tools import EarlyStopping, adjust_learning_rate, visual, save_model,
 from data_provider.data_factory import data_provider
 from exp_basic import Exp_Basic
 from torch.utils.tensorboard import SummaryWriter
+# import pytorch_model_summary as pms
+# from torchinfo import summary
 from torch import optim
 import torch.nn as nn
 import torch
-
-# import pytorch_model_summary as pms
-# from torchinfo import summary
 
 import pandas as pd
 import numpy as np
@@ -31,7 +30,6 @@ class Exp_Main(Exp_Basic):
     def _build_model(self):
         model_dict = {
             'BIVA': BIVA,
-            # 'em_DFM': em_DFM,
         }
         model = model_dict[self.args.model].Model(self.args).float()
 

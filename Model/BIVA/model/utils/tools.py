@@ -11,8 +11,14 @@ import matplotlib.pyplot as plt
 
 plt.switch_backend('agg')
 
-def repeat_row(series):
-  return series.repeat(3)
+def repeat_label_row(df,pred_len,repeat):
+  stact_block = pd.DataFrame()
+  length = len(df) - pred_len +1
+  for i in range(length):
+    pred_block = df.iloc[i:i+pred_len,:]
+    for c in range(1,repeat+1):
+      stact_block = pd.concat([stact_block,pred_block])
+  return stact_block
 
 def remove_outliers(dta):
     # Compute the mean and interquartile range
