@@ -37,7 +37,7 @@ class Dataset_BIVA(Dataset):
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
-        self.period = {'M': ['2000-01','2023-03'], 'Q':['1999-03','2023-03']}
+        self.period = {'M': ['2000-01','2023-01'], 'Q':['2000-03','2023-03']}
         self.start_M = self.period['M'][0]
         self.end_M = self.period['M'][1]
         self.start_Q = self.period['Q'][0]
@@ -82,13 +82,26 @@ class Dataset_BIVA(Dataset):
         border2 = border2s[self.set_type]
         
         # Q       
-        num_train_Q = int(len(df_Q) * 0.8) #(0.8 if not self.train_only else 1))
-        num_test_Q = int(len(df_Q) * 0.1)
-        num_vali_Q = len(df_Q) - num_train_Q - num_test_Q
-        border1s_Q = [0, num_train_Q - self.seq_len, len(df_Q) - num_test_Q - self.seq_len]
-        border2s_Q = [num_train_Q, num_train_Q + num_vali_Q, len(df_Q)]
+        # num_train_Q = int(len(df_Q) * 0.8) #(0.8 if not self.train_only else 1))
+        # num_test_Q = int(len(df_Q) * 0.1)
+        # num_vali_Q = len(df_Q) - num_train_Q - num_test_Q
+        # border1s_Q = [0, num_train_Q - self.seq_len, len(df_Q) - num_test_Q - self.seq_len]
+        # border2s_Q = [num_train_Q, num_train_Q + num_vali_Q, len(df_Q)]
+        border1s_Q = [0, (num_train - self.seq_len)//3, (len(df_M) - num_test - self.seq_len)//3]
+        border2s_Q = [num_train//3, (num_train + num_vali)//3, len(df_M)//3]
+
         border1_Q = border1s_Q[self.set_type]
         border2_Q = border2s_Q[self.set_type]
+
+        # if self.set_type == 1 or self.set_type == 2:
+        #   print(f"val == > df_Q.shape: {df_Q.shape}")
+        #   print(f"border1_Q: {border1_Q}")
+        #   print(f"border2_Q: {border2_Q}")
+        #   raise
+        # else:
+        #   print(f"train == > df_Q.shape: {df_Q.shape}")
+        #   print(f"border1_Q: {border1_Q}")
+        #   print(f"border2_Q: {border2_Q}")     
 
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
@@ -124,10 +137,12 @@ class Dataset_BIVA(Dataset):
             train_data_t = df_data_t[border1s_Q[0]:border2s_Q[0]]
             df_data_t_cols = df_data_t.columns
             df_data_t_index = df_data_t.index
+            
             self.scaler_m.fit(train_data.values)
             data = self.scaler_m.transform(df_data.values)
             self.scaler_q.fit(train_data_t.values)
             data_t = self.scaler_q.transform(df_data_t.values)
+            
             data = pd.DataFrame(data,columns=df_data_cols, index=df_data_index)
             data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
             
@@ -180,7 +195,7 @@ class Dataset_BIVA(Dataset):
         # state period is Q freq (so, take one more time step to forward)
         r_q_index = s_end//3 # quater's month length
         r_q_res   = s_end%3
-        set_pred_len = repeat_label_row(df=self.data_y,pred_len=self.pred_len,repeat=3) 
+        set_pred_len = self.repeat_label_row(df=self.data_y,pred_len=self.pred_len,repeat=3) 
         if r_q_res == 0:
             r_begin =  r_q_index*self.pred_len - self.pred_len
             r_end = r_begin + self.pred_len
@@ -201,10 +216,6 @@ class Dataset_BIVA(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
     
-class Dataset_DFM(Dataset):
-    pass    
-    
-
 class Dataset_Pred(Dataset):
     def __init__(self, root_path, flag='pred', size=None, features='MS', data_path='custom.csv',
                  target='GDP', scale=True, inverse=False, timeenc=0, freq='m', cols=None):

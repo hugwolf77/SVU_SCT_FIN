@@ -1,9 +1,9 @@
-from data_provider.data_loader import Dataset_BIVA, Dataset_DFM, Dataset_Pred
+from data_provider.data_loader import Dataset_BIVA, Dataset_Pred
 from torch.utils.data import DataLoader
 
 data_dict = {
     'BIVA': Dataset_BIVA,
-    'stats_DFM' : Dataset_DFM
+    # 'stats_DFM' : Dataset_DFM
 }
 
 def data_provider(args, flag):
