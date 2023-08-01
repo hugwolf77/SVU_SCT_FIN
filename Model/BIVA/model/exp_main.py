@@ -188,6 +188,20 @@ class Exp_Main(Exp_Basic):
             train_loss = np.average(train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
+            
+            
+            # result save
+            save_path = '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_result/' + self.args.model_id + '/'
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+
+            train_loss = np.array(train_loss)
+            vali_loss = np.array(vali_loss)
+            test_loss = np.array(test_loss)
+
+            np.save(save_path + 'train_loss.npy',train_loss)
+            np.save(save_path + 'vali_loss.npy', vali_loss)
+            np.save(save_path + 'test_loss.npy', test_loss)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
