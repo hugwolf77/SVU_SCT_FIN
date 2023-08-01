@@ -73,8 +73,8 @@ class Dataset_BIVA(Dataset):
         # print(f"df_raw.cols : {df_raw.columns}")
 
         # M
-        num_train = int(len(df_M) * 0.8) #(0.8 if not self.train_only else 1))
-        num_test = int(len(df_M) * 0.1)
+        num_train = int(len(df_M) * 0.9) #(0.8 if not self.train_only else 1))
+        num_test = int(len(df_M) * 0.05)
         num_vali = len(df_M) - num_train - num_test
         border1s = [0, num_train - self.seq_len, len(df_M) - num_test - self.seq_len]
         border2s = [num_train, num_train + num_vali, len(df_M)]
