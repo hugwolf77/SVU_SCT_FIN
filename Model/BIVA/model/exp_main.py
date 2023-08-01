@@ -113,8 +113,8 @@ class Exp_Main(Exp_Basic):
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
         
-        self.model.load_state_dict(torch.load(os.path.join(
-                path + self.args.model_id, '_last_checkpoint.pth')))
+        if self.args.last_chkpt == True:
+            self.model.load_state_dict(torch.load(os.path.join(path + self.args.last_chkpt)))
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
