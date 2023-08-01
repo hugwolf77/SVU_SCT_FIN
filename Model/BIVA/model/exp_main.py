@@ -157,10 +157,10 @@ class Exp_Main(Exp_Basic):
                     f_dim = -1 if self.args.features == 'MS' else 0
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                    # loss_recon = criterion(recon_output,imputed)
+                    loss_recon = criterion(recon_output,imputed)
                     loss_states = criterion(states,batch_y)
-                    # loss = loss_recon + loss_states
-                    loss = loss_states
+                    loss = loss_recon + loss_states
+                    # loss = loss_states
                     
                     train_loss.append(loss.item())
 
@@ -189,8 +189,9 @@ class Exp_Main(Exp_Basic):
             vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
             
+            torch.save(self.model.state_dict(), path + self.args.model_id +'last_checkpoint.pth')
             
-            # result save
+            # loss save
             save_path = '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_result/' + self.args.model_id + '/'
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
@@ -214,6 +215,7 @@ class Exp_Main(Exp_Basic):
 
         best_model_path = path + self.args.model_id + '_checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
+        
 
         return self.model
 
@@ -222,11 +224,17 @@ class Exp_Main(Exp_Basic):
         path = os.path.join(self.args.checkpoints)
         if not os.path.exists(path):
             os.makedirs(path)
-
+        
         if test:
             print('loading model')
             self.model.load_state_dict(torch.load(os.path.join(
                 path + self.args.model_id, '_checkpoint.pth')))
+
+        # if test:
+        #     print('loading model')
+        #     self.model.load_state_dict(torch.load(os.path.join(
+        #         path + self.args.model_id, 'last_checkpoint.pth')))
+
 
         preds = []
         trues = []
