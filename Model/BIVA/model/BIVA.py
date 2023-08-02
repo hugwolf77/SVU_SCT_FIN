@@ -189,7 +189,8 @@ class Model(nn.Module):
         # print(f"seasonal_output_z.shape: {seasonal_output_z.shape}")
         # 
         seasonal_output_z = seasonal_output_z.permute(0, 2, 1)
-        seasonal_output_x_z = torch.cat([seasonal_output_x,seasonal_output_z])
+        seasonal_output_x = seasonal_output_x.permute(0, 2, 1)
+        seasonal_output_x_z = torch.cat([seasonal_output_x,seasonal_output_z],dim=1)
         seasonal_output = self.Conv1d_Seasonal(seasonal_output_x_z)
         seasonal_output = self.Linear_Seasonal(seasonal_output)
 

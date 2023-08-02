@@ -82,6 +82,6 @@ class Model(nn.Module):
     def forward(self, x):
         x, mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
-        x_z = torch.cat([x, z], dim=0)
+        x_z = torch.cat([x, z], dim=2)
         output = self.decode(x_z)
         return output, mu, logvar, x, z
