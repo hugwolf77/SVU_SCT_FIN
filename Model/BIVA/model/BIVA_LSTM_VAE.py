@@ -29,7 +29,7 @@ class Model(nn.Module):
         self.encoder_fc_logvar = nn.Linear(self.latent_size, self.latent_size)
 
         self.decoder_lstm_1 = nn.LSTM(
-            self.latent_size, self.hidden_size_2, num_layers, batch_first=True)
+            self.latent_size*2, self.hidden_size_2, num_layers, batch_first=True)
         self.decoder_lstm_2 = nn.LSTM(
             self.hidden_size_2, self.hidden_size_1, num_layers, batch_first=True)
         self.decoder_lstm_3 = nn.LSTM(
@@ -56,7 +56,7 @@ class Model(nn.Module):
         #     x = self.batchnorm1d_encoder(x)  # apply batch normalization
         mu = self.encoder_fc_mu(x)
         logvar = self.encoder_fc_logvar(x)
-        return mu, logvar
+        return x, mu, logvar
 
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
@@ -80,7 +80,8 @@ class Model(nn.Module):
         return output
 
     def forward(self, x):
-        mu, logvar = self.encode(x)
+        x, mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
-        output = self.decode(z)
-        return output, mu, logvar, z
+        x_z = torch.cat([x, z], dim=1)
+        output = self.decode(x_z)
+        return output, mu, logvar, x, z
