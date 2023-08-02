@@ -115,6 +115,7 @@ class Exp_Main(Exp_Basic):
         
         if self.args.last_chkpt:
             self.model.load_state_dict(torch.load(os.path.join(path + self.args.last_chkpt)))
+            print(f"=========> load_last chkpt: {self.args.last_chkpt}")
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
