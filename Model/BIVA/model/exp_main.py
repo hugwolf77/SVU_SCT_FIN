@@ -90,9 +90,10 @@ class Exp_Main(Exp_Basic):
                 loss = loss_states
                 total_loss.append(loss)
 
+        total_loss_s = total_loss.copy()
         total_loss = np.average(total_loss)
         self.model.train()
-        return total_loss
+        return total_loss, total_loss_s
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -189,9 +190,10 @@ class Exp_Main(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(
                 epoch + 1, time.time() - epoch_time))
+            train_loss_s = train_loss.copy()
             train_loss = np.average(train_loss)
-            vali_loss = self.vali(vali_data, vali_loader, criterion)
-            test_loss = self.vali(test_data, test_loader, criterion)
+            vali_loss, vali_loss_t = self.vali(vali_data, vali_loader, criterion)
+            test_loss, test_loss_t = self.vali(test_data, test_loader, criterion)
             
             torch.save(self.model.state_dict(), path + self.args.model_id +'_last_checkpoint.pth')
             
@@ -200,13 +202,13 @@ class Exp_Main(Exp_Basic):
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
 
-            train_loss = np.array(train_loss)
+            train_loss_s = np.array(train_loss_s)
             vali_loss = np.array(vali_loss)
             test_loss = np.array(test_loss)
 
-            np.save(save_path + 'train_loss.npy',train_loss)
-            np.save(save_path + 'vali_loss.npy', vali_loss)
-            np.save(save_path + 'test_loss.npy', test_loss)
+            np.save(save_path + 'train_loss.npy',train_loss_s)
+            np.save(save_path + 'vali_loss.npy', vali_loss_t)
+            np.save(save_path + 'test_loss.npy', test_loss_t)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
