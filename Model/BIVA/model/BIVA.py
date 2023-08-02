@@ -146,7 +146,7 @@ class Model(nn.Module):
 
         if self.conv1d:
             self.Conv1d_Seasonal = nn.Conv1d(
-                self.latent_size, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+                self.latent_size*2, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
             self.Linear_Seasonal = nn.Linear(self.seq_len, self.pred_len)
             self.Linear_Seasonal.weight = nn.Parameter(
                 (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
@@ -189,7 +189,8 @@ class Model(nn.Module):
         # print(f"seasonal_output_z.shape: {seasonal_output_z.shape}")
         # 
         seasonal_output_z = seasonal_output_z.permute(0, 2, 1)
-        seasonal_output = self.Conv1d_Seasonal(seasonal_output_z)
+        seasonal_output_x_z = torch.cat([seasonal_output_x,seasonal_output_z])
+        seasonal_output = self.Conv1d_Seasonal(seasonal_output_x_z)
         seasonal_output = self.Linear_Seasonal(seasonal_output)
 
         if self.combination:

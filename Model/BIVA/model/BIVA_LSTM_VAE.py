@@ -64,14 +64,14 @@ class Model(nn.Module):
         z = mu + eps * std
         return z
 
-    def decode(self, z):
+    def decode(self, x_z):
         # z = self.decoder_fc(z)
         # if self.batch_norm:
             # z = self.batchnorm1d_decoder(z)  # apply batch normalization
         # repeat along sequence length
         # z = z.unsqueeze(1).repeat(1, self.seq_len, 1)
 
-        out, _ = self.decoder_lstm_1(z)
+        out, _ = self.decoder_lstm_1(x_z)
         out, _ = self.decoder_lstm_2(out)
         out, _ = self.decoder_lstm_3(out)
         out, _ = self.decoder_lstm_4(out)
@@ -82,6 +82,6 @@ class Model(nn.Module):
     def forward(self, x):
         x, mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
-        x_z = torch.cat([x, z], dim=1)
+        x_z = torch.cat([x, z], dim=0)
         output = self.decode(x_z)
         return output, mu, logvar, x, z
