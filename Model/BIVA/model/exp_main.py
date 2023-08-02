@@ -219,7 +219,7 @@ class Exp_Main(Exp_Basic):
 
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 
-        best_model_path = path + self.args.model_id + '_checkpoint.pth'
+        best_model_path = path + self.args.model_id + '_best_checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
         
 
@@ -234,7 +234,7 @@ class Exp_Main(Exp_Basic):
         if test:
             print('loading model')
             self.model.load_state_dict(torch.load(os.path.join(
-                path + self.args.model_id, '_checkpoint.pth')))
+                path + self.args.model_id + '_best_checkpoint.pth')))
 
         # if test:
         #     print('loading model')
