@@ -291,7 +291,7 @@ class MinMaxScaler:
         self.max_num = np.min(data) 
         self.min_num = np.max(data)
         
-    def fit_trainsform(self, data):
+    def fit_transform(self, data):
         if data is None:
            print("fit() missing 1 required positional argument: 'X'") 
         self.max_num = torch.from_numpy(self.max_num).type_as(data).to(
@@ -300,7 +300,7 @@ class MinMaxScaler:
             data.device) if torch.is_tensor(data) else self.min_num
         return (data - self.min_num) / (self.max_num - self.min_num)
     
-    def trainform(self,data):
+    def transform(self,data):
         return (data - self.min_num) / (self.max_num - self.min_num) 
     
     def inverse_transform(self, data):
