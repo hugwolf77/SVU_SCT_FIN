@@ -294,20 +294,20 @@ class MinMaxScaler:
     def transform(self,data):
         if data is None:
            print("fit() missing 1 required positional argument: 'X'") 
-        self.max_num = torch.from_numpy(self.max_num).type_as(data).to(
+        max_num = torch.from_numpy(self.max_num).type_as(data).to(
             data.device) if torch.is_tensor(data) else self.max_num  
-        self.min_num = torch.from_numpy(self.min_num).type_as(data).to(
+        min_num = torch.from_numpy(self.min_num).type_as(data).to(
             data.device) if torch.is_tensor(data) else self.min_num
-        return (data - self.min_num) / (self.max_num - self.min_num)
+        return (data - min_num) / (max_num - min_num)
     
     def inverse_transform(self, data):
         if data is None:
            print("fit() missing 1 required positional argument: 'X'") 
-        self.max_num = torch.from_numpy(self.max_num).type_as(data).to(
+        max_num = torch.from_numpy(self.max_num).type_as(data).to(
             data.device) if torch.is_tensor(data) else self.max_num  
-        self.min_num = torch.from_numpy(self.min_num).type_as(data).to(
+        min_num = torch.from_numpy(self.min_num).type_as(data).to(
             data.device) if torch.is_tensor(data) else self.min_num
-        return (data*(self.max_num -self.min_num)) + self.min_num
+        return (data*(max_num - min_num)) + min_num
         
 def visual(true, preds=None, name='./pic/test.pdf'):
     """
