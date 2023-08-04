@@ -64,13 +64,13 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output, seasonal_init = self.model(batch_x)
+                            states, recon_output, imputed, imputed_loss = self.model(batch_x)
                         else:
                             pass
 
                 else:
                     if 'BIVA' in self.args.model:
-                       states, recon_output, seasonal_init = self.model(batch_x)
+                       states, recon_output, imputed, imputed_loss = self.model(batch_x)
                     else:
                         pass
 
@@ -78,7 +78,7 @@ class Exp_Main(Exp_Basic):
                     batch_y = batch_y[:, -self.args.pred_len:,f_dim:].to(self.device)
                 
                 #input = batch_x.detach().cpu()
-                imputed = seasonal_init.detach().cpu()
+                imputed = imputed.detach().cpu()
                 recon = recon_output.detach().cpu()
                 pred = states.detach().cpu()
                 true = batch_y.detach().cpu()
@@ -138,7 +138,7 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output, imputed = self.model(batch_x)
+                            states, recon_output, imputed, imputed_loss = self.model(batch_x)
                         else:
                             pass
 
@@ -147,14 +147,15 @@ class Exp_Main(Exp_Basic):
 
                         loss_recon = criterion(recon_output,imputed)
                         loss_states = criterion(states,batch_y)
-                        loss = loss_recon + loss_states
+                        loss = loss_recon + imputed_loss + loss_states
+                        # loss = (loss_recon*self.args.recon_loss_w) + (imputed_loss*self.args.imputed_loss_w) + (loss_states*self.args.state_loss_w)
                         loss = loss_states
 
                         train_loss.append(loss.item())
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output, imputed = self.model(batch_x)
+                        states, recon_output, imputed, imputed_loss = self.model(batch_x)
                     else:
                         pass
 
@@ -163,7 +164,7 @@ class Exp_Main(Exp_Basic):
 
                     loss_recon = criterion(recon_output,imputed)
                     loss_states = criterion(states,batch_y)
-                    loss = loss_recon + loss_states
+                    loss = loss_recon + imputed_loss + loss_states
                     # loss = loss_states
                     
                     train_loss.append(loss.item())
@@ -263,7 +264,7 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output,imputed = self.model(batch_x)
+                            states, recon_output, imputed, imputed_loss = self.model(batch_x)
                         else:
                             pass
                         
@@ -272,7 +273,7 @@ class Exp_Main(Exp_Basic):
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output, imputed = self.model(batch_x)
+                        states, recon_output, imputed, imputed_loss = self.model(batch_x)
                     else:
                         pass
 

@@ -173,6 +173,8 @@ class Model(nn.Module):
 
         # BRITS - imputation
         x = self.BRITS(x)
+        x = x['imputations']
+        imputed_loss = x['loss']
         # print(f"BRITS_out_x.shape: {x.shape}")
 
         # decompose timeseries
@@ -206,4 +208,4 @@ class Model(nn.Module):
         if self.RIN:
             states = self.RIN_func.off_RIN(states)
 
-        return states, recon_output, seasonal_init
+        return states, recon_output, seasonal_init, imputed_loss

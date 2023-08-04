@@ -20,20 +20,36 @@ class Model(nn.Module):
         self.rits_b = RITS.Model(args)
 
     def forward(self, data):
-        ret_f = self.rits_f(data)
-        ret_b = self.reverse(self.rits_b(data))
+        ret_f = self.rits_f(data, 'forward')
+        ret_b = self.reverse(self.rits_b(data, 'backward'))
         imputations = self.merge_ret(ret_f, ret_b)
         return imputations
 
     def merge_ret(self, ret_f, ret_b):
+        loss_f = ret_f['loss']
+        loss_b = ret_b['loss']
+
+        loss_c = self.get_consistency_loss(ret_f['imputations'], ret_b['imputations'])
+
+        loss = loss_f + loss_b + loss_c
         imputations = (ret_f['imputations'] + ret_b['imputations']) / 2
-        return imputations
+
+        ret_f['loss'] = loss
+        ret_f['imputations'] = imputations
+
+        return ret_f
+
+    def get_consistency_loss(self, pred_f, pred_b):
+        loss = torch.abs(pred_f - pred_b).mean() * 1e-1
+        return loss
 
     def reverse(self, ret):
         def reverse_tensor(tensor_):
             if tensor_.dim() <= 1:
                 return tensor_
             indices = range(tensor_.size()[1])[::-1]
+            print(f"indice : {indices}")
+            raise
             indices = Variable(torch.LongTensor(indices), requires_grad=False)
 
             if torch.cuda.is_available():
