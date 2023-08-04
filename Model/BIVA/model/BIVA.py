@@ -186,7 +186,9 @@ class Model(nn.Module):
         # -- Seasonal --
         # LSTM_VAE
         recon_output, mu, logvar, seasonal_output_x, seasonal_output_z = self.LSTM_VAE(seasonal_init)
-        # print(f"seasonal_output_z.shape: {seasonal_output_z.shape}")
+        print(f"seasonal_output_z.shape: {seasonal_init.shape}")
+        print(f"recon_output.shape: {recon_output.shape}")
+        raise
         # 
         seasonal_output_z = seasonal_output_z.permute(0, 2, 1)
         seasonal_output_x = seasonal_output_x.permute(0, 2, 1)
