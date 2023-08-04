@@ -146,7 +146,7 @@ class Dataset_BIVA(Dataset):
             df_data_t_index = df_data_t.index
             
             self.scaler_m.fit(train_data.values)
-            data = self.scaler_m.fit_transformtransform(df_data.values)
+            data = self.scaler_m.fit_transform(df_data.values)
             self.scaler_q.fit(train_data_t.values)
             data_t = self.scaler_q.fit_transform(df_data_t.values)
             
