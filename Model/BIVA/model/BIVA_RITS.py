@@ -165,14 +165,14 @@ class Model(nn.Module):
             
             x_loss += torch.sum(torch.abs(torch.nan_to_num(x) - x_h) * m) / (torch.sum(m) + 1e-5)
 
-            x_c = torch.nan_to_num(m * x) + (1 - m) * x_h
+            x_c = m * torch.nan_to_num(x) + (1 - m) * x_h
             z_h = self.feat_reg(x_c)
             
             x_loss += torch.sum(torch.abs(torch.nan_to_num(x) - z_h) * m) / (torch.sum(m) + 1e-5)
 
             alpha = self.weight_combine(torch.cat([gamma_x, m], dim=1))
             c_h = alpha * z_h + (1 - alpha) * x_h
-            c_c = torch.nan_to_num(m * x) + (1 - m) * c_h
+            c_c = m * torch.nan_to_num(x) + (1 - m) * c_h
 
             inputs = torch.cat([c_c, m], dim=1)
             h, c = self.rnn_cell(inputs, (h, c))
