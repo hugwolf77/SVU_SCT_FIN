@@ -35,8 +35,7 @@ class Exp_Main(Exp_Basic):
 
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
-        
-        
+                
         return model
 
     def _get_data(self, flag):

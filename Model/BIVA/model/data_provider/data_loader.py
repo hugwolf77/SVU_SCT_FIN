@@ -4,7 +4,8 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from utils.tools import StandardScaler, load_data_timeindex, load_data_DFM, set_lag_missing, repeat_label_row
+from sklearn.preprocessing import MinMaxScaler as sk_MinMaxScaler
+from utils.tools import StandardScaler, MinMaxScaler, load_data_timeindex, load_data_DFM, set_lag_missing, repeat_label_row
 from utils.timefeatures import time_features
 
 import warnings
@@ -53,8 +54,10 @@ class Dataset_BIVA(Dataset):
 
 
     def __read_data__(self):
-        self.scaler_m = StandardScaler()
-        self.scaler_q = StandardScaler()
+        # self.scaler_m = StandardScaler()
+        # self.scaler_q = StandardScaler()
+        self.scaler_m = MinMaxScaler()
+        self.scaler_q = MinMaxScaler()
         
         path = os.path.join(self.root_path, self.data_path)
         
