@@ -35,8 +35,7 @@ class Exp_Main(Exp_Basic):
 
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
-        
-        
+                
         return model
 
     def _get_data(self, flag):
@@ -84,15 +83,16 @@ class Exp_Main(Exp_Basic):
                 pred = states.detach().cpu()
                 true = batch_y.detach().cpu()
                 
-                # loss_recon = criterion(recon,imputed)
+                loss_recon = criterion(recon,imputed)
                 loss_states = criterion(pred,true)
-                # loss = loss_recon + loss_states
+                loss = loss_recon + loss_states
                 loss = loss_states
                 total_loss.append(loss)
 
+        total_loss_s = total_loss.copy()
         total_loss = np.average(total_loss)
         self.model.train()
-        return total_loss
+        return total_loss, total_loss_s
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -112,6 +112,10 @@ class Exp_Main(Exp_Basic):
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
+        
+        if self.args.last_chkpt:
+            self.model.load_state_dict(torch.load(os.path.join(path + self.args.last_chkpt)))
+            print(f"=========> load_last chkpt: {self.args.last_chkpt}")
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
@@ -141,9 +145,9 @@ class Exp_Main(Exp_Basic):
                         f_dim = -1 if self.args.features == 'MS' else 0
                         batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                        # loss_recon = criterion(recon_output,imputed)
+                        loss_recon = criterion(recon_output,imputed)
                         loss_states = criterion(states,batch_y)
-                        # loss = loss_recon + loss_states
+                        loss = loss_recon + loss_states
                         loss = loss_states
 
                         train_loss.append(loss.item())
@@ -157,10 +161,10 @@ class Exp_Main(Exp_Basic):
                     f_dim = -1 if self.args.features == 'MS' else 0
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                    # loss_recon = criterion(recon_output,imputed)
+                    loss_recon = criterion(recon_output,imputed)
                     loss_states = criterion(states,batch_y)
-                    # loss = loss_recon + loss_states
-                    loss = loss_states
+                    loss = loss_recon + loss_states
+                    # loss = loss_states
                     
                     train_loss.append(loss.item())
 
@@ -185,9 +189,25 @@ class Exp_Main(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(
                 epoch + 1, time.time() - epoch_time))
+            train_loss_s = train_loss.copy()
             train_loss = np.average(train_loss)
-            vali_loss = self.vali(vali_data, vali_loader, criterion)
-            test_loss = self.vali(test_data, test_loader, criterion)
+            vali_loss, vali_loss_t = self.vali(vali_data, vali_loader, criterion)
+            test_loss, test_loss_t = self.vali(test_data, test_loader, criterion)
+            
+            torch.save(self.model.state_dict(), path + self.args.model_id +'_last_checkpoint.pth')
+            
+            # loss save
+            save_path = '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_result/' + self.args.model_id + '/'
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+
+            train_loss_s = np.array(train_loss_s)
+            vali_loss = np.array(vali_loss)
+            test_loss = np.array(test_loss)
+
+            np.save(save_path + 'train_loss.npy',train_loss_s)
+            np.save(save_path + 'vali_loss.npy', vali_loss_t)
+            np.save(save_path + 'test_loss.npy', test_loss_t)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
@@ -198,8 +218,9 @@ class Exp_Main(Exp_Basic):
 
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 
-        best_model_path = path + self.args.model_id + '_checkpoint.pth'
+        best_model_path = path + self.args.model_id + '_best_checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
+        
 
         return self.model
 
@@ -208,11 +229,17 @@ class Exp_Main(Exp_Basic):
         path = os.path.join(self.args.checkpoints)
         if not os.path.exists(path):
             os.makedirs(path)
-
+        
         if test:
             print('loading model')
             self.model.load_state_dict(torch.load(os.path.join(
-                path + self.args.model_id, '_checkpoint.pth')))
+                path + self.args.model_id + '_best_checkpoint.pth')))
+
+        # if test:
+        #     print('loading model')
+        #     self.model.load_state_dict(torch.load(os.path.join(
+        #         path + self.args.model_id, 'last_checkpoint.pth')))
+
 
         preds = []
         trues = []
@@ -252,14 +279,10 @@ class Exp_Main(Exp_Basic):
                 f_dim = -1 if self.args.features == 'MS' else 0
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                states = states.detach().cpu().numpy()
-                recon_output = recon_output.detach().cpu().numpy()
+                pred = states.detach().cpu().numpy()
+                recon = recon_output.detach().cpu().numpy()
                 imputed = imputed.detach().cpu().numpy()
-                batch_y = batch_y.detach().cpu().numpy()
-
-                pred = states  # outputs.detach().cpu().numpy()  # .squeeze()
-                true = batch_y  # batch_y.detach().cpu().numpy()  # .squeeze()
-                recon = recon_output
+                true = batch_y.detach().cpu().numpy()
 
                 preds.append(pred)
                 trues.append(true)
@@ -286,7 +309,7 @@ class Exp_Main(Exp_Basic):
 
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-        reconx = reconx.reshape(-1, trues.shape[-2], trues.shape[-1])
+        reconx = reconx.reshape(-1, reconx.shape[-2], reconx.shape[-1])
         imputation = imputation.reshape(-1, imputation.shape[-2], imputation.shape[-1])
         inputx = inputx.reshape(-1, inputx.shape[-2], inputx.shape[-1])
         # x_mark = x_mark.reshape(-1, x_mark.shape[-2], x_mark.shape[-1])
@@ -298,10 +321,10 @@ class Exp_Main(Exp_Basic):
             os.makedirs(save_path)
 
         mae, mse, rmse, mape, mspe, rse, corr = metric(preds, trues)
-        print('mse:{}, mae:{}, rse:{}, corr:{}'.format(mse, mae, rse, corr))
+        print('mse:{}, mae:{}, rmse:{}, mape:{}'.format(mse, mae, rmse, mape))
         f = open("result.txt", 'a')
         f.write(setting + "  \n")
-        f.write('mse:{}, mae:{}, rse:{}, corr:{}'.format(mse, mae, rse, corr))
+        f.write('mse:{}, mae:{}, rmse:{}, mape:{}'.format(mse, mae, rmse, mape))
         f.write('\n')
         f.write('\n')
         f.close()

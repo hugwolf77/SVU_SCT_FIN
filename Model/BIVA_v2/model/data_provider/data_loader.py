@@ -4,7 +4,8 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from utils.tools import StandardScaler, load_data_timeindex, load_data_DFM, set_lag_missing, repeat_row
+from sklearn.preprocessing import MinMaxScaler as sk_MinMaxScaler
+from utils.tools import StandardScaler, MinMaxScaler, load_data_timeindex, load_data_DFM, set_lag_missing, repeat_label_row
 from utils.timefeatures import time_features
 
 import warnings
@@ -37,7 +38,8 @@ class Dataset_BIVA(Dataset):
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
-        self.period = {'M': ['2000-01','2023-03'], 'Q':['1999-03','2023-03']}
+        self.period = {'M': ['2000-01','2023-01'], 'Q':['2000-03','2023-03']}
+        # self.period = {'M': ['2010-01','2023-01'], 'Q':['2010-03','2023-03']}
         self.start_M = self.period['M'][0]
         self.end_M = self.period['M'][1]
         self.start_Q = self.period['Q'][0]
@@ -46,30 +48,38 @@ class Dataset_BIVA(Dataset):
         self.load_data_DFM = load_data_DFM
         self.load_data_timeindex = load_data_timeindex
         self.set_lag_missing = set_lag_missing
-        self.repeat_row = repeat_row
+        self.repeat_label_row = repeat_label_row
         
         self.__read_data__()
 
 
     def __read_data__(self):
-        self.scaler_m = StandardScaler()
-        self.scaler_q = StandardScaler()
+        # self.scaler_m = StandardScaler()
+        # self.scaler_q = StandardScaler()
+        self.scaler_m = MinMaxScaler()
+        self.scaler_q = MinMaxScaler()
         
         path = os.path.join(self.root_path, self.data_path)
         
         # df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_DFM(path)
         df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_timeindex(path)
         
+        df_Q = df_Q_trans
+        df_M = df_M_trans
+        
         cols_M = list(df_M.columns)
         cols_Q = list(df_Q.columns)
         cols_Q.remove(self.target)
         df_Q = df_Q[cols_Q + [self.target]]
         df_M = df_M.loc[self.start_M:self.end_M]
-        df_Q = df_Q.loc[self.start_Q:self.end_Q].apply(repeat_row, axis=0)
+        df_Q = df_Q.loc[self.start_Q:self.end_Q]
+        # df_Q = repeat_label_row(df=df_Q, pred_len=self.pred_len, repeat=3)
+        
         # print(f"df_M.shape period (start: {self.start_M} ~ end: {self.end_M}): {df_M.shape}")
         # print(f"df_Q.shape period (start: {self.start_Q} ~ end: {self.end_Q}): {df_Q.shape}")
         # print(f"df_raw.cols : {df_raw.columns}")
 
+        # M
         num_train = int(len(df_M) * 0.8) #(0.8 if not self.train_only else 1))
         num_test = int(len(df_M) * 0.1)
         num_vali = len(df_M) - num_train - num_test
@@ -77,6 +87,28 @@ class Dataset_BIVA(Dataset):
         border2s = [num_train, num_train + num_vali, len(df_M)]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
+        
+        # Q       
+        # num_train_Q = int(len(df_Q) * 0.8) #(0.8 if not self.train_only else 1))
+        # num_test_Q = int(len(df_Q) * 0.1)
+        # num_vali_Q = len(df_Q) - num_train_Q - num_test_Q
+        # border1s_Q = [0, num_train_Q - self.seq_len, len(df_Q) - num_test_Q - self.seq_len]
+        # border2s_Q = [num_train_Q, num_train_Q + num_vali_Q, len(df_Q)]
+        border1s_Q = [0, (num_train - self.seq_len)//3, (len(df_M) - num_test - self.seq_len)//3]
+        border2s_Q = [num_train//3, (num_train + num_vali)//3, len(df_M)//3]
+
+        border1_Q = border1s_Q[self.set_type]
+        border2_Q = border2s_Q[self.set_type]
+
+        # if self.set_type == 1 or self.set_type == 2:
+        #   print(f"val == > df_Q.shape: {df_Q.shape}")
+        #   print(f"border1_Q: {border1_Q}")
+        #   print(f"border2_Q: {border2_Q}")
+        #   raise
+        # else:
+        #   print(f"train == > df_Q.shape: {df_Q.shape}")
+        #   print(f"border1_Q: {border1_Q}")
+        #   print(f"border2_Q: {border2_Q}")     
 
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
@@ -86,6 +118,7 @@ class Dataset_BIVA(Dataset):
             elif self.features == 'S':
                 df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
+                
         elif self.set_type == 1:
             if self.features == 'M' or self.features == 'MS':
                 # cols_data = df_M.columns[1:]
@@ -107,13 +140,16 @@ class Dataset_BIVA(Dataset):
             train_data = df_data[border1s[0]:border2s[0]]
             df_data_cols = df_data.columns
             df_data_index = df_data.index
-            train_data_t = df_data_t[border1s[0]:border2s[0]]
+            
+            train_data_t = df_data_t[border1s_Q[0]:border2s_Q[0]]
             df_data_t_cols = df_data_t.columns
             df_data_t_index = df_data_t.index
+            
             self.scaler_m.fit(train_data.values)
             data = self.scaler_m.transform(df_data.values)
             self.scaler_q.fit(train_data_t.values)
             data_t = self.scaler_q.transform(df_data_t.values)
+            
             data = pd.DataFrame(data,columns=df_data_cols, index=df_data_index)
             data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
             
@@ -150,23 +186,34 @@ class Dataset_BIVA(Dataset):
             data_stamp_t = df_stamp_t.values
 
         self.data_x = data[border1:border2]
-        self.data_y = data_t[border1:border2]
+        self.data_y = data_t[border1_Q:border2_Q]
         self.data_stamp = data_stamp[border1:border2]
-        self.data_stamp_t = data_stamp_t[border1:border2]
+        self.data_stamp_t = data_stamp_t[border1_Q:border2_Q]
 
     def __getitem__(self, index):
         s_begin = index
         s_end = s_begin + self.seq_len
-        # state period is Q freq (so, take one more time step to forward)
-        r_begin = s_end - self.label_len - 1
-        r_end = r_begin + self.label_len + self.pred_len - 1
-
         seq_x = self.data_x[s_begin:s_end]
-        seq_y = self.data_y[r_begin:r_end].values
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
         # set lag seq_x
         seq_x = self.set_lag_missing(seq_x, self.var_info,'M').values
+        
+        # calculate the start position of the label 
+        # considering the predict length and quarter index         
+        # state period is Q freq (so, take one more time step to forward)
+        r_q_index = s_end//3 # quater's month length
+        r_q_res   = s_end%3
+        set_pred_len = self.repeat_label_row(df=self.data_y,pred_len=self.pred_len,repeat=3) 
+        if r_q_res == 0:
+            r_begin =  r_q_index*self.pred_len - self.pred_len
+            r_end = r_begin + self.pred_len
+        else:
+            r_begin =  r_q_index*self.pred_len - self.pred_len + (self.pred_len*r_q_res)
+            r_end = r_begin + self.pred_len
+        seq_y = set_pred_len[r_begin:r_end].values
+        
+        # time feagure index       
+        seq_x_mark = self.data_stamp[s_begin:s_end]
+        seq_y_mark = self.data_stamp[r_begin:r_end]
         
         return seq_x, seq_y, #seq_x_mark, seq_y_mark
 
@@ -176,10 +223,6 @@ class Dataset_BIVA(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
     
-class Dataset_DFM(Dataset):
-    pass    
-    
-
 class Dataset_Pred(Dataset):
     def __init__(self, root_path, flag='pred', size=None, features='MS', data_path='custom.csv',
                  target='GDP', scale=True, inverse=False, timeenc=0, freq='m', cols=None):

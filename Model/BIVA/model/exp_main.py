@@ -279,14 +279,10 @@ class Exp_Main(Exp_Basic):
                 f_dim = -1 if self.args.features == 'MS' else 0
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                states = states.detach().cpu().numpy()
-                recon_output = recon_output.detach().cpu().numpy()
+                pred = states.detach().cpu().numpy()
+                recon = recon_output.detach().cpu().numpy()
                 imputed = imputed.detach().cpu().numpy()
-                batch_y = batch_y.detach().cpu().numpy()
-
-                pred = states  # outputs.detach().cpu().numpy()  # .squeeze()
-                true = batch_y  # batch_y.detach().cpu().numpy()  # .squeeze()
-                recon = recon_output
+                true = batch_y.detach().cpu().numpy()
 
                 preds.append(pred)
                 trues.append(true)
@@ -313,7 +309,7 @@ class Exp_Main(Exp_Basic):
 
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-        reconx = reconx.reshape(-1, trues.shape[-2], trues.shape[-1])
+        reconx = reconx.reshape(-1, reconx.shape[-2], reconx.shape[-1])
         imputation = imputation.reshape(-1, imputation.shape[-2], imputation.shape[-1])
         inputx = inputx.reshape(-1, inputx.shape[-2], inputx.shape[-1])
         # x_mark = x_mark.reshape(-1, x_mark.shape[-2], x_mark.shape[-1])
