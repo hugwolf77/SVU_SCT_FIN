@@ -48,8 +48,7 @@ class Model(nn.Module):
             if tensor_.dim() <= 1:
                 return tensor_
             indices = range(tensor_.size()[1])[::-1]
-            print(f"indice : {indices}")
-            raise
+
             indices = Variable(torch.LongTensor(indices), requires_grad=False)
 
             if torch.cuda.is_available():
@@ -59,5 +58,9 @@ class Model(nn.Module):
 
         for key in ret:
             ret[key] = reverse_tensor(ret[key])
+            
+        # print(f"key : {key}")
+        # print(f"ret[key]:\n {ret[key][0][:,0]} {ret[key].shape}")
+        # raise
 
         return ret

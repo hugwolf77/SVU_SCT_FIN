@@ -107,7 +107,7 @@ class Model(nn.Module):
             self.input_size * 2, self.input_size)
 
         self.dropout = nn.Dropout(p = 0.25)
-        self.out = nn.Linear(self.rnn_hid_size, 1)
+        # self.out = nn.Linear(self.rnn_hid_size, 1)
 
         # self.delta_calc()
 
@@ -129,17 +129,15 @@ class Model(nn.Module):
     def forward(self, data, direct):
 
         # make function for each section data
-        
-        print(f"forward value: \n {data[0]}")
-
         if direct == 'forward':
             values = data
         else: # 'backward'
-            values = torch.filp(data,[1])
-        print(f"reverse value: \n {values[0]}")
-        raise
+            # print(f"forward value: \n {data[0]} {data[0].shape}")
+            values = torch.flip(data,[1]).cuda()
+            # print(f"reverse value: \n {values[0]} {values[0].shape}")
+            # raise
             
-        masks = torch.logical_not(torch.isnan(data)).float()
+        masks = torch.logical_not(torch.isnan(values)).float()
         # print(f"masks.shape: {masks.shape}")
         # just 1step is time-strimp 1 month step
         deltas = self.delta_calc(masks)
