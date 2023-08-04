@@ -288,8 +288,8 @@ class MinMaxScaler:
     def fit(self, data):
         if data is None:
            print("fit() missing 1 required positional argument: 'X'")
-        self.max_num = np.min(data) 
-        self.min_num = np.max(data)
+        self.max_num = np.max(data) 
+        self.min_num = np.min(data)
         
     def fit_transform(self, data):
         if data is None:
