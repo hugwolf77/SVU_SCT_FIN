@@ -4,8 +4,8 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from sklearn.preprocessing import MinMaxScaler as sk_MinMaxScaler
-from utils.tools import StandardScaler, MinMaxScaler, load_data_timeindex, load_data_DFM, set_lag_missing, repeat_label_row
+from sklearn.preprocessing import MinMaxScaler
+from utils.tools import StandardScaler, load_data_timeindex, load_data_DFM, set_lag_missing, repeat_label_row
 from utils.timefeatures import time_features
 
 import warnings
@@ -146,9 +146,9 @@ class Dataset_BIVA(Dataset):
             df_data_t_index = df_data_t.index
             
             self.scaler_m.fit(train_data.values)
-            data = self.scaler_m.transform(df_data.values)
+            data = self.scaler_m.fit_transformtransform(df_data.values)
             self.scaler_q.fit(train_data_t.values)
-            data_t = self.scaler_q.transform(df_data_t.values)
+            data_t = self.scaler_q.fit_transform(df_data_t.values)
             
             data = pd.DataFrame(data,columns=df_data_cols, index=df_data_index)
             data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
