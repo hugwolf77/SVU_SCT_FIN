@@ -280,34 +280,34 @@ class StandardScaler():
             data.device) if torch.is_tensor(data) else self.std
         return (data * std) + mean
     
-class MinMaxScaler:
-    def __init__(self):
-        self.max_num = -np.inf
-        self.min_num = np.inf
+# class MinMaxScaler:
+#     def __init__(self):
+#         self.max_num = -np.inf
+#         self.min_num = np.inf
         
-    def fit(self, data):
-        if data is None:
-           print("fit() missing 1 required positional argument: 'X'")
-        self.max_num = np.max(data) 
-        self.min_num = np.min(data)
+#     def fit(self, data):
+#         if data is None:
+#            print("fit() missing 1 required positional argument: 'X'")
+#         self.max_num = np.max(data) 
+#         self.min_num = np.min(data)
     
-    def transform(self,data):
-        if data is None:
-           print("fit() missing 1 required positional argument: 'X'") 
-        max_num = torch.from_numpy(self.max_num).type_as(data).to(
-            data.device) if torch.is_tensor(data) else self.max_num  
-        min_num = torch.from_numpy(self.min_num).type_as(data).to(
-            data.device) if torch.is_tensor(data) else self.min_num
-        return (data - min_num) / (max_num - min_num)
+#     def transform(self,data):
+#         if data is None:
+#            print("fit() missing 1 required positional argument: 'X'") 
+#         max_num = torch.from_numpy(self.max_num).type_as(data).to(
+#             data.device) if torch.is_tensor(data) else self.max_num  
+#         min_num = torch.from_numpy(self.min_num).type_as(data).to(
+#             data.device) if torch.is_tensor(data) else self.min_num
+#         return (data - min_num) / (max_num - min_num)
     
-    def inverse_transform(self, data):
-        if data is None:
-           print("fit() missing 1 required positional argument: 'X'") 
-        max_num = torch.from_numpy(self.max_num).type_as(data).to(
-            data.device) if torch.is_tensor(data) else self.max_num  
-        min_num = torch.from_numpy(self.min_num).type_as(data).to(
-            data.device) if torch.is_tensor(data) else self.min_num
-        return (data*(max_num - min_num)) + min_num
+#     def inverse_transform(self, data):
+#         if data is None:
+#            print("fit() missing 1 required positional argument: 'X'") 
+#         max_num = torch.from_numpy(self.max_num).type_as(data).to(
+#             data.device) if torch.is_tensor(data) else self.max_num  
+#         min_num = torch.from_numpy(self.min_num).type_as(data).to(
+#             data.device) if torch.is_tensor(data) else self.min_num
+#         return (data*(max_num - min_num)) + min_num
         
 def visual(true, preds=None, name='./pic/test.pdf'):
     """
