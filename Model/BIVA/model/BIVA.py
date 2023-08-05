@@ -124,8 +124,6 @@ class Model(nn.Module):
         self.RIN = args.RIN                  # boolen, Reverse Instance Normalize option
         self.combination = args.combination  # boolen, compose time Series part option
         
-        
-        
         self.build(args)
 
     def build(self, args):
@@ -175,7 +173,7 @@ class Model(nn.Module):
         """
         Computes the VAE loss function.
         """
-        kld_weight = 0.025  # Account for the minibatch samples from the dataset
+        kld_weight = 0.2  # Account for the minibatch samples from the dataset
         # recons_weight = 
         recons_loss = F.mse_loss(recons, input)
         kld_loss = torch.mean( -0.5 * torch.sum(1 + log_var - mu**2 - log_var.exp(), dim=1), dim=0 )

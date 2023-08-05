@@ -89,7 +89,7 @@ class Exp_Main(Exp_Basic):
                 # calc loss
                 # loss_recon = criterion(recon,imputed)
                 loss_states = criterion(pred,true)
-                loss = VAE_loss*0.3 + imputed_loss + loss_states*0.4
+                loss = VAE_loss*0.3 + imputed_loss + loss_states
                 total_loss.append(loss.item())
                 state_loss.append(loss_states.item())
 
@@ -151,7 +151,7 @@ class Exp_Main(Exp_Basic):
 
                         # loss_recon = criterion(recon_output,imputed)
                         loss_states = criterion(states,batch_y)
-                        loss = VAE_loss*0.3 + imputed_loss + loss_states*0.4
+                        loss = VAE_loss*0.3 + imputed_loss + loss_states
                         # loss = (loss_recon*self.args.recon_loss_w) + (imputed_loss*self.args.imputed_loss_w) + (loss_states*self.args.state_loss_w)
 
                         train_loss.append(loss.item())
@@ -167,10 +167,7 @@ class Exp_Main(Exp_Basic):
 
                     # loss_recon = criterion(recon_output,imputed)
                     loss_states = criterion(states,batch_y)
-                    print(f"loss_states: {loss_states}")
-                    loss = VAE_loss*0.3 + imputed_loss + loss_states*0.4
-                    print(f"loss: {loss}")
-                    raise
+                    loss = VAE_loss*0.3 + imputed_loss + loss_states
                     
                     state_loss.append(loss_states.item())
                     train_loss.append(loss.item())
