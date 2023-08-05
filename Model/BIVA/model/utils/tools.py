@@ -190,10 +190,10 @@ def adjust_learning_rate(optimizer, epoch, args):
         # print(f"adf lr: {lr_adjust[1]}")
         # raise
     elif args.lradj == '1':
+        lr_adjust = {epoch: args.learning_rate * (0.97 ** (epoch // 1))}
         # print(f"lr: {lr_adjust[1]}")
         if lr_adjust[epoch] <= 0.001:
             lr_adjust[epoch] = 0.001
-        lr_adjust = {epoch: args.learning_rate * (0.97 ** (epoch // 1))}
         # print(f"adf lr: {lr_adjust[1]}")
         # raise
     elif args.lradj == '2':
