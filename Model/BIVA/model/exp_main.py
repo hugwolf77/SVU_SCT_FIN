@@ -52,6 +52,8 @@ class Exp_Main(Exp_Basic):
 
     def vali(self, vali_data, vali_loader, criterion):
         total_loss = []
+        state_loss = []
+        
         self.model.eval()
         with torch.no_grad():
             # for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
@@ -89,10 +91,11 @@ class Exp_Main(Exp_Basic):
                 loss_states = criterion(pred,true)
                 loss = VAE_loss*0.3 + imputed_loss + loss_states*0.4
                 total_loss.append(loss.item())
+                state_loss.append(loss_states.item())
 
         total_loss = np.average(total_loss)
         self.model.train()
-        return total_loss
+        return total_loss, state_loss
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -123,6 +126,7 @@ class Exp_Main(Exp_Basic):
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
+            state_loss = []
 
             self.model.train()
             epoch_time = time.time()
@@ -165,11 +169,12 @@ class Exp_Main(Exp_Basic):
                     loss_states = criterion(states,batch_y)
                     loss = VAE_loss*0.3 + imputed_loss + loss_states*0.4
                     
+                    state_loss.append(loss_states.item())
                     train_loss.append(loss.item())
 
                 if (i + 1) % 10 == 0:
-                    print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(
-                        i + 1, epoch + 1, loss.item()))
+                    print("\titers: {0}, epoch: {1} | loss: {2:.7f} | state loss {2:.7f}".format(
+                        i + 1, epoch + 1, loss.item(), state_loss))
                     speed = (time.time() - time_now) / iter_count
                     left_time = speed * \
                         ((self.args.train_epochs - epoch) * train_steps - i)
@@ -191,7 +196,7 @@ class Exp_Main(Exp_Basic):
             # train_loss_s = train_loss.copy()
             train_loss = np.average(train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
-            test_loss = self.vali(test_data, test_loader, criterion)
+            test_loss, test_state_loss = self.vali(test_data, test_loader, criterion)
             
             torch.save(self.model.state_dict(), path + self.args.model_id +'_last_checkpoint.pth')
             
@@ -207,9 +212,10 @@ class Exp_Main(Exp_Basic):
             np.save(save_path + 'train_loss.npy',train_loss)
             np.save(save_path + 'vali_loss.npy', vali_loss)
             np.save(save_path + 'test_loss.npy', test_loss)
+            np.save(save_path, + 'test_state_loss.npy, test_state_loss')
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, test_loss))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f} Test state Loss: {4:.7f}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, test_loss, test_state_loss))
             early_stopping(vali_loss, self.model, path, self.args.model_id)
             if early_stopping.early_stop:
                 print("Early stopping")

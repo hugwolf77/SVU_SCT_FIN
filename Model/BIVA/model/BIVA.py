@@ -180,7 +180,7 @@ class Model(nn.Module):
         recons_loss = F.mse_loss(recons, input)
         kld_loss = torch.mean( -0.5 * torch.sum(1 + log_var - mu**2 - log_var.exp(), dim=1), dim=0 )
         loss = recons_loss + kld_weight * kld_loss
-        return loss, recons_loss, -kld_loss
+        return torch.sum(loss), recons_loss, -kld_loss
 
     def forward(self, x):
         # x: [Batch, Input length, Channel]
@@ -203,8 +203,8 @@ class Model(nn.Module):
         # -- Seasonal --
         # LSTM_VAE
         recon_output, mu, logvar, seasonal_enc_output_x, seasonal_output_z = self.LSTM_VAE(seasonal_init)
-        VAE_loss = self.loss_function(recon_output, seasonal_init, mu, logvar)
-         
+        VAE_loss,_,_ = self.loss_function(recon_output, seasonal_init, mu, logvar)
+        
         # print(f"seasonal_output_z.shape: {seasonal_init.shape}")
         # print(f"recon_output.shape: {recon_output.shape}")
         # raise

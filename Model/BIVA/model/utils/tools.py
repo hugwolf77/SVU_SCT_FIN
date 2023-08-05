@@ -179,11 +179,21 @@ def adjust_learning_rate(optimizer, epoch, args):
         lr_adjust = {
             2: 5e-5, 4: 1e-5, 6: 5e-6, 8: 1e-6, 10: 5e-7, 15: 1e-7, 20: 5e-8
         }
+    elif args.lradj == 'type-e':
+        # print(f"lr: {lr_adjust[1]}")
+        if epoch <= 20:
+             lr_adjust[epoch] = 0.15
+        elif lr_adjust[epoch] <= 0.001:
+            lr_adjust[epoch] = 0.001
+        else:
+            lr_adjust = {epoch: args.learning_rate * (0.95 ** (epoch // 1))}
+        # print(f"adf lr: {lr_adjust[1]}")
+        # raise
     elif args.lradj == '1':
-        lr_adjust = {epoch: args.learning_rate * (0.97 ** (epoch // 1))}
         # print(f"lr: {lr_adjust[1]}")
         if lr_adjust[epoch] <= 0.001:
             lr_adjust[epoch] = 0.001
+        lr_adjust = {epoch: args.learning_rate * (0.97 ** (epoch // 1))}
         # print(f"adf lr: {lr_adjust[1]}")
         # raise
     elif args.lradj == '2':
