@@ -212,7 +212,7 @@ class Exp_Main(Exp_Basic):
             np.save(save_path + 'train_loss.npy',train_loss)
             np.save(save_path + 'vali_loss.npy', vali_loss)
             np.save(save_path + 'test_loss.npy', test_loss)
-            np.save(save_path, + 'test_state_loss.npy', test_state_loss)
+            np.save(save_path + 'test_state_loss.npy', test_state_loss)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f} Test state Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss, test_state_loss))
