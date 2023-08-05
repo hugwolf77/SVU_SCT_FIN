@@ -208,6 +208,7 @@ class Exp_Main(Exp_Basic):
             train_loss = np.array(train_loss)
             vali_loss = np.array(vali_loss)
             test_loss = np.array(test_loss)
+            test_state_loss = np.array(test_state_loss)
 
             np.save(save_path + 'train_loss.npy',train_loss)
             np.save(save_path + 'vali_loss.npy', vali_loss)
