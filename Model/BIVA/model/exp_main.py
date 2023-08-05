@@ -94,6 +94,7 @@ class Exp_Main(Exp_Basic):
                 state_loss.append(loss_states.item())
 
         total_loss = np.average(total_loss)
+        state_loss = np.average(state_loss)
         self.model.train()
         return total_loss, state_loss
 
