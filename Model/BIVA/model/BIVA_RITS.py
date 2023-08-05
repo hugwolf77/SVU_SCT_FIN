@@ -181,6 +181,6 @@ class Model(nn.Module):
 
         imputations = torch.cat(imputations, dim=1)
 
-        return {'loss': x_loss * self.impute_weight,'imputations': imputations} 
+        return {'loss': x_loss * self.imputed_weight,'imputations': imputations} 
 
         # return {'imputations': imputations}

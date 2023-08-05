@@ -64,13 +64,13 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output, imputed, imputed_loss = self.model(batch_x)
+                            states, recon_output, imputed, imputed_loss, imputed_x = self.model(batch_x)
                         else:
                             pass
 
                 else:
                     if 'BIVA' in self.args.model:
-                       states, recon_output, imputed, imputed_loss = self.model(batch_x)
+                       states, recon_output, imputed, imputed_loss, imputed_x = self.model(batch_x)
                     else:
                         pass
 
@@ -137,7 +137,7 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output, imputed, imputed_loss = self.model(batch_x)
+                            states, recon_output, imputed, imputed_loss, imputed_x = self.model(batch_x)
                         else:
                             pass
 
@@ -153,7 +153,7 @@ class Exp_Main(Exp_Basic):
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output, imputed, imputed_loss = self.model(batch_x)
+                        states, recon_output, imputed, imputed_loss, imputed_x = self.model(batch_x)
                     else:
                         pass
 
@@ -244,6 +244,7 @@ class Exp_Main(Exp_Basic):
         reconx = []
         imputation = []
         inputx = []
+        imputed_xs = []
         # './test_results/' + setting + '/'
         folder_path = '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_plot/' + self.args.model_id + '/'
         if not os.path.exists(folder_path):
@@ -261,7 +262,7 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output, imputed, imputed_loss = self.model(batch_x)
+                            states, recon_output, imputed, imputed_loss, imputed_x = self.model(batch_x)
                         else:
                             pass
                         
@@ -270,7 +271,7 @@ class Exp_Main(Exp_Basic):
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output, imputed, imputed_loss = self.model(batch_x)
+                        states, recon_output, imputed, imputed_loss, imputed_x = self.model(batch_x)
                     else:
                         pass
 
@@ -281,12 +282,14 @@ class Exp_Main(Exp_Basic):
                 recon = recon_output.detach().cpu().numpy()
                 imputed = imputed.detach().cpu().numpy()
                 true = batch_y.detach().cpu().numpy()
+                imputed_x = imputed_x.detach().cpu().numpy()
 
                 preds.append(pred)
                 trues.append(true)
                 reconx.append(recon)
                 imputation.append(imputed)
                 inputx.append(batch_x.detach().cpu().numpy())
+                imputed_xs.append(imputed_x)
 
                 if i % 10 == 0:
                     input = batch_x.detach().cpu().numpy()
@@ -301,6 +304,7 @@ class Exp_Main(Exp_Basic):
         reconx = np.array(reconx)
         imputation = np.array(imputation)
         inputx = np.array(inputx)
+        imputed_xs = np.array(imputed_xs)
         
         # x_mark = np.array(batch_x_mark.cpu().numpy())
         # y_mark = np.array(batch_y_mark.cpu().numpy())
@@ -310,6 +314,7 @@ class Exp_Main(Exp_Basic):
         reconx = reconx.reshape(-1, reconx.shape[-2], reconx.shape[-1])
         imputation = imputation.reshape(-1, imputation.shape[-2], imputation.shape[-1])
         inputx = inputx.reshape(-1, inputx.shape[-2], inputx.shape[-1])
+        imputed_xs = imputed_xs.reshape(-1, imputed_xs.shape[-2], imputed_xs.shape[-1])
         # x_mark = x_mark.reshape(-1, x_mark.shape[-2], x_mark.shape[-1])
         # y_mark = y_mark.reshape(-1, y_mark.shape[-2], y_mark.shape[-1])
 
@@ -334,6 +339,7 @@ class Exp_Main(Exp_Basic):
         np.save(save_path + 'BIVA_recons.npy',reconx)
         np.save(save_path + 'BIVA_imputation.npy',imputation)
         np.save(save_path + 'BIVA_inputs.npy', inputx)
+        np.save(save_path + 'BIVA_imputed_xs.npy', imputed_xs)
         # np.save(save_path + 'x_mark.npy', x_mark)
         # np.save(save_path + 'y_mark.npy', y_mark)
         return preds, trues, inputx, mae, mse, rmse, mape, mspe, rse, corr
@@ -361,12 +367,12 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output, imputed = self.model(batch_x)
+                            states, recon_output, imputed, imputed_x = self.model(batch_x)
                         else:
                             pass
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output, imputed = self.model(batch_x)
+                        states, recon_output, imputed, imputed_x = self.model(batch_x)
                     else:
                         pass
 

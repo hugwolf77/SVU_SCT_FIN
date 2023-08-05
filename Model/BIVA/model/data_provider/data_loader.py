@@ -64,8 +64,8 @@ class Dataset_BIVA(Dataset):
         # df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_DFM(path)
         df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_timeindex(path)
         
-        df_Q = df_Q_trans
-        df_M = df_M_trans
+        # df_Q = df_Q_trans
+        # df_M = df_M_trans
         
         cols_M = list(df_M.columns)
         cols_Q = list(df_Q.columns)

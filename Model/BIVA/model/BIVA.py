@@ -173,12 +173,12 @@ class Model(nn.Module):
 
         # BRITS - imputation
         x = self.BRITS(x)
-        x = x['imputations']
+        imputed_x = x['imputations']
         imputed_loss = x['loss']
         # print(f"BRITS_out_x.shape: {x.shape}")
 
         # decompose timeseries
-        seasonal_init, trend_init = self.decomposition(x)
+        seasonal_init, trend_init = self.decomposition(imputed_x)
         # -- Trend --
         trend_init = trend_init.permute(0, 2, 1)
         trend_output = self.Conv1d_Trend(trend_init)
@@ -208,4 +208,4 @@ class Model(nn.Module):
         if self.RIN:
             states = self.RIN_func.off_RIN(states)
 
-        return states, recon_output, seasonal_init, imputed_loss
+        return states, recon_output, seasonal_init, imputed_loss, imputed_x
