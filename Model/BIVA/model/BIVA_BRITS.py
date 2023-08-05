@@ -33,10 +33,10 @@ class Model(nn.Module):
 
         loss = loss_f + loss_b + loss_c
         imputations = (ret_f['imputations'] + ret_b['imputations']) / 2
-        print(f"ret_f['imputations']: \n {ret_f['imputations']}")
-        print(f"ret_b['imputations']:\n {ret_b['imputations']}")
-        print(f"imputations: \n {imputations}")
-        raise
+        # print(f"ret_f['imputations']: \n {ret_f['imputations']}")
+        # print(f"ret_b['imputations']:\n {ret_b['imputations']}")
+        # print(f"imputations: \n {imputations}")
+        # raise
 
         ret_f['loss'] = loss
         ret_f['imputations'] = imputations
