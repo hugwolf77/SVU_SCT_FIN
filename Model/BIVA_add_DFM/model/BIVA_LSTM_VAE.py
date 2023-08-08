@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class Model(nn.Module):
     def __init__(self, args, num_layers=1, batch_norm=False):
@@ -81,6 +82,8 @@ class Model(nn.Module):
 
     def forward(self, x):
         x, mu, logvar = self.encode(x)
+        mu = F.relu(mu)
+        logvar = F.relu(logvar)
         z = self.reparameterize(mu, logvar)
         x_z = torch.cat([x, z], dim=2)
         output = self.decode(x_z)

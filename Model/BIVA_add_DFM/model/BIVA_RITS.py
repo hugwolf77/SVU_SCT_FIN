@@ -5,6 +5,23 @@ from torch.autograd import Variable
 from torch.nn.parameter import Parameter
 import math
 
+# def binary_cross_entropy_with_logits(input, target, weight=None, size_average=True, reduce=True):
+#     if not (target.size() == input.size()):
+#         raise ValueError("Target size ({}) must be the same as input size ({})".format(target.size(), input.size()))
+
+#     max_val = (-input).clamp(min=0)
+#     loss = input - input * target + max_val + ((-max_val).exp() + (-input - max_val).exp()).log()
+
+#     if weight is not None:
+#         loss = loss * weight
+
+#     if not reduce:
+#         return loss
+#     elif size_average:
+#         return loss.mean()
+#     else:
+#         return loss.sum()
+
 class FeatureRegression(nn.Module):
     def __init__(self, input_size):
         super(FeatureRegression, self).__init__()
@@ -71,6 +88,7 @@ class Model(nn.Module):
         self.seq_len = args.seq_len
         self.input_size = args.channels 
         self.rnn_hid_size = args.rnn_hid_size
+        self.imputed_weight = args.imputed_weight
 
         self.build()
 
@@ -87,6 +105,9 @@ class Model(nn.Module):
 
         self.weight_combine = nn.Linear(
             self.input_size * 2, self.input_size)
+
+        self.dropout = nn.Dropout(p = 0.25)
+        # self.out = nn.Linear(self.rnn_hid_size, 1)
 
         # self.delta_calc()
 
@@ -105,12 +126,18 @@ class Model(nn.Module):
                       delta[b,t,d] = t - (t-1)
         return delta
 
-    def forward(self, data):
+    def forward(self, data, direct):
 
         # make function for each section data
-
-        values = data
-        masks = torch.logical_not(torch.isnan(data)).float()
+        if direct == 'forward':
+            values = data
+        else: # 'backward'
+            # print(f"forward value: \n {data[0]} {data[0].shape}")
+            values = torch.flip(data,[1]).cuda()
+            # print(f"reverse value: \n {values[0]} {values[0].shape}")
+            # raise
+            
+        masks = torch.logical_not(torch.isnan(values)).float()
         # print(f"masks.shape: {masks.shape}")
         # just 1step is time-strimp 1 month step
         deltas = self.delta_calc(masks)
@@ -120,6 +147,8 @@ class Model(nn.Module):
 
         if torch.cuda.is_available():
             h, c = h.cuda(), c.cuda()
+            
+        x_loss = 0.0
 
         imputations = []
 
@@ -133,13 +162,17 @@ class Model(nn.Module):
 
             h = h * gamma_h
             x_h = self.hist_reg(h)
+            
+            x_loss += torch.sum(torch.abs(torch.nan_to_num(x) - x_h) * m) / (torch.sum(m) + 1e-5)
 
-            x_c = torch.nan_to_num(m * x) + (1 - m) * x_h
+            x_c = m * torch.nan_to_num(x) + (1 - m) * x_h
             z_h = self.feat_reg(x_c)
+            
+            x_loss += torch.sum(torch.abs(torch.nan_to_num(x) - z_h) * m) / (torch.sum(m) + 1e-5)
 
             alpha = self.weight_combine(torch.cat([gamma_x, m], dim=1))
             c_h = alpha * z_h + (1 - alpha) * x_h
-            c_c = torch.nan_to_num(m * x) + (1 - m) * c_h
+            c_c = m * torch.nan_to_num(x) + (1 - m) * c_h
 
             inputs = torch.cat([c_c, m], dim=1)
             h, c = self.rnn_cell(inputs, (h, c))
@@ -148,4 +181,6 @@ class Model(nn.Module):
 
         imputations = torch.cat(imputations, dim=1)
 
-        return {'imputations': imputations}
+        return {'loss': x_loss * self.imputed_weight,'imputations': imputations} 
+
+        # return {'imputations': imputations}

@@ -123,6 +123,7 @@ class Model(nn.Module):
         self.conv1d = args.conv1d
         self.RIN = args.RIN                  # boolen, Reverse Instance Normalize option
         self.combination = args.combination  # boolen, compose time Series part option
+        
         self.build(args)
 
     def build(self, args):
@@ -131,6 +132,9 @@ class Model(nn.Module):
             self.decomposition = series_decomp_multi(self.kernel_size)
         else:
             self.decomposition = series_decomp(self.kernel_size)
+            
+        # self.log_softmax = F.log_softmax()
+        # self.KLDivLoss = nn.KLDivLoss(reduction='batchmean')
 
         # brits
         self.BRITS = BRITS.Model(args)
@@ -165,18 +169,29 @@ class Model(nn.Module):
             self.Linear_Trend.weight = nn.Parameter(
                 (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
+    def loss_function(self, recons, input, mu, log_var):
+        """
+        Computes the VAE loss function.
+        """
+        kld_weight = 0.2  # Account for the minibatch samples from the dataset
+        # recons_weight = 
+        recons_loss = F.mse_loss(recons, input)
+        kld_loss = torch.mean( -0.5 * torch.sum(1 + log_var - mu**2 - log_var.exp(), dim=1), dim=0 )
+        loss = recons_loss + kld_weight * kld_loss
+        return torch.sum(loss), recons_loss, -kld_loss
+
     def forward(self, x):
         # x: [Batch, Input length, Channel]
-
         if self.RIN:
             x = self.RIN_func.set_RIN(x)
-
         # BRITS - imputation
         x = self.BRITS(x)
+        imputed_x = x['imputations']
+        imputed_loss = x['loss']
         # print(f"BRITS_out_x.shape: {x.shape}")
 
         # decompose timeseries
-        seasonal_init, trend_init = self.decomposition(x)
+        seasonal_init, trend_init = self.decomposition(imputed_x)
         # -- Trend --
         trend_init = trend_init.permute(0, 2, 1)
         trend_output = self.Conv1d_Trend(trend_init)
@@ -185,14 +200,16 @@ class Model(nn.Module):
 
         # -- Seasonal --
         # LSTM_VAE
-        recon_output, mu, logvar, seasonal_output_x, seasonal_output_z = self.LSTM_VAE(seasonal_init)
+        recon_output, mu, logvar, seasonal_enc_output_x, seasonal_output_z = self.LSTM_VAE(seasonal_init)
+        VAE_loss,_,_ = self.loss_function(recon_output, seasonal_init, mu, logvar)
+        
         # print(f"seasonal_output_z.shape: {seasonal_init.shape}")
         # print(f"recon_output.shape: {recon_output.shape}")
         # raise
         # 
         seasonal_output_z = seasonal_output_z.permute(0, 2, 1)
-        seasonal_output_x = seasonal_output_x.permute(0, 2, 1)
-        seasonal_output_x_z = torch.cat([seasonal_output_x,seasonal_output_z],dim=1)
+        seasonal_enc_output_x = seasonal_enc_output_x.permute(0, 2, 1)
+        seasonal_output_x_z = torch.cat([seasonal_enc_output_x,seasonal_output_z],dim=1)
         seasonal_output = self.Conv1d_Seasonal(seasonal_output_x_z)
         seasonal_output = self.Linear_Seasonal(seasonal_output)
 
@@ -206,4 +223,4 @@ class Model(nn.Module):
         if self.RIN:
             states = self.RIN_func.off_RIN(states)
 
-        return states, recon_output, seasonal_init
+        return states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x

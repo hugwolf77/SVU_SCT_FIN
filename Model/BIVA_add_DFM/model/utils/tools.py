@@ -179,13 +179,20 @@ def adjust_learning_rate(optimizer, epoch, args):
         lr_adjust = {
             2: 5e-5, 4: 1e-5, 6: 5e-6, 8: 1e-6, 10: 5e-7, 15: 1e-7, 20: 5e-8
         }
+    elif args.lradj == 'type-e':
+        lr_adjust = {epoch: 0.2}
+        if epoch <= 20:
+             lr_adjust[epoch] = 0.15
+        elif lr_adjust[epoch] <= 0.001:
+            lr_adjust[epoch] = 0.001
+        else:
+            lr_adjust = {epoch: args.learning_rate * (0.95 ** (epoch // 1))}
+
     elif args.lradj == '1':
-        lr_adjust = {epoch: args.learning_rate * (0.97 ** (epoch // 1))}
-        # print(f"lr: {lr_adjust[1]}")
+        lr_adjust = {epoch: args.learning_rate * (0.9 ** (epoch // 1))}
         if lr_adjust[epoch] <= 0.001:
             lr_adjust[epoch] = 0.001
-        # print(f"adf lr: {lr_adjust[1]}")
-        # raise
+
     elif args.lradj == '2':
         lr_adjust = {
             0: 0.0001, 5: 0.0005, 10: 0.001, 20: 0.0001, 30: 0.00005, 40: 0.00001, 70: 0.000001
@@ -280,37 +287,34 @@ class StandardScaler():
             data.device) if torch.is_tensor(data) else self.std
         return (data * std) + mean
     
-class MinMaxScaler:
-    def __init__(self):
-        self.max_num = -np.inf
-        self.min_num = np.inf
+# class MinMaxScaler:
+#     def __init__(self):
+#         self.max_num = -np.inf
+#         self.min_num = np.inf
         
-    def fit(self, data):
-        if data is None:
-           print("fit() missing 1 required positional argument: 'X'")
-        self.max_num = np.min(data) 
-        self.min_num = np.max(data)
-        
-    def fit_transform(self, data):
-        if data is None:
-           print("fit() missing 1 required positional argument: 'X'") 
-        self.max_num = torch.from_numpy(self.max_num).type_as(data).to(
-            data.device) if torch.is_tensor(data) else self.max_num  
-        self.min_num = torch.from_numpy(self.min_num).type_as(data).to(
-            data.device) if torch.is_tensor(data) else self.min_num
-        return (data - self.min_num) / (self.max_num - self.min_num)
+#     def fit(self, data):
+#         if data is None:
+#            print("fit() missing 1 required positional argument: 'X'")
+#         self.max_num = np.max(data) 
+#         self.min_num = np.min(data)
     
-    def transform(self,data):
-        return (data - self.min_num) / (self.max_num - self.min_num) 
+#     def transform(self,data):
+#         if data is None:
+#            print("fit() missing 1 required positional argument: 'X'") 
+#         max_num = torch.from_numpy(self.max_num).type_as(data).to(
+#             data.device) if torch.is_tensor(data) else self.max_num  
+#         min_num = torch.from_numpy(self.min_num).type_as(data).to(
+#             data.device) if torch.is_tensor(data) else self.min_num
+#         return (data - min_num) / (max_num - min_num)
     
-    def inverse_transform(self, data):
-        if data is None:
-           print("fit() missing 1 required positional argument: 'X'") 
-        self.max_num = torch.from_numpy(self.max_num).type_as(data).to(
-            data.device) if torch.is_tensor(data) else self.max_num  
-        self.min_num = torch.from_numpy(self.min_num).type_as(data).to(
-            data.device) if torch.is_tensor(data) else self.min_num
-        return (data*(self.max_num -self.min_num)) + self.min_num
+#     def inverse_transform(self, data):
+#         if data is None:
+#            print("fit() missing 1 required positional argument: 'X'") 
+#         max_num = torch.from_numpy(self.max_num).type_as(data).to(
+#             data.device) if torch.is_tensor(data) else self.max_num  
+#         min_num = torch.from_numpy(self.min_num).type_as(data).to(
+#             data.device) if torch.is_tensor(data) else self.min_num
+#         return (data*(max_num - min_num)) + min_num
         
 def visual(true, preds=None, name='./pic/test.pdf'):
     """

@@ -52,6 +52,7 @@ class Exp_Main(Exp_Basic):
 
     def vali(self, vali_data, vali_loader, criterion):
         total_loss = []
+        
         self.model.eval()
         with torch.no_grad():
             # for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
@@ -64,13 +65,13 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output, seasonal_init = self.model(batch_x)
+                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                         else:
                             pass
 
                 else:
                     if 'BIVA' in self.args.model:
-                       states, recon_output, seasonal_init = self.model(batch_x)
+                       states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                     else:
                         pass
 
@@ -78,21 +79,21 @@ class Exp_Main(Exp_Basic):
                     batch_y = batch_y[:, -self.args.pred_len:,f_dim:].to(self.device)
                 
                 #input = batch_x.detach().cpu()
-                imputed = seasonal_init.detach().cpu()
-                recon = recon_output.detach().cpu()
+                imputed_loss = imputed_loss.detach().cpu()
+                VAE_loss = VAE_loss.detach().cpu()
+                # recon = recon_output.detach().cpu()
                 pred = states.detach().cpu()
                 true = batch_y.detach().cpu()
                 
-                loss_recon = criterion(recon,imputed)
+                # calc loss
+                # loss_recon = criterion(recon,imputed)
                 loss_states = criterion(pred,true)
-                loss = loss_recon + loss_states
-                loss = loss_states
-                total_loss.append(loss)
+                loss = VAE_loss*0.3 + imputed_loss + loss_states
+                total_loss.append(loss.item())
 
-        total_loss_s = total_loss.copy()
         total_loss = np.average(total_loss)
         self.model.train()
-        return total_loss, total_loss_s
+        return total_loss
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -123,6 +124,7 @@ class Exp_Main(Exp_Basic):
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
+            state_loss = []
 
             self.model.train()
             epoch_time = time.time()
@@ -138,38 +140,38 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output, imputed = self.model(batch_x)
+                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                         else:
                             pass
 
                         f_dim = -1 if self.args.features == 'MS' else 0
                         batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                        loss_recon = criterion(recon_output,imputed)
+                        # loss_recon = criterion(recon_output,imputed)
                         loss_states = criterion(states,batch_y)
-                        loss = loss_recon + loss_states
-                        loss = loss_states
+                        loss = VAE_loss*0.3 + imputed_loss + loss_states
+                        # loss = (loss_recon*self.args.recon_loss_w) + (imputed_loss*self.args.imputed_loss_w) + (loss_states*self.args.state_loss_w)
 
                         train_loss.append(loss.item())
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output, imputed = self.model(batch_x)
+                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                     else:
                         pass
 
                     f_dim = -1 if self.args.features == 'MS' else 0
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                    loss_recon = criterion(recon_output,imputed)
+                    # loss_recon = criterion(recon_output,imputed)
                     loss_states = criterion(states,batch_y)
-                    loss = loss_recon + loss_states
-                    # loss = loss_states
+                    loss = VAE_loss*0.3 + imputed_loss + loss_states
                     
+                    # state_loss.append(loss_states.item())
                     train_loss.append(loss.item())
 
                 if (i + 1) % 10 == 0:
-                    print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(
+                    print("\titers: {0}, epoch: {1} | loss: {2:.7f} ".format(
                         i + 1, epoch + 1, loss.item()))
                     speed = (time.time() - time_now) / iter_count
                     left_time = speed * \
@@ -189,10 +191,10 @@ class Exp_Main(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(
                 epoch + 1, time.time() - epoch_time))
-            train_loss_s = train_loss.copy()
+            # train_loss_s = train_loss.copy()
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_t = self.vali(vali_data, vali_loader, criterion)
-            test_loss, test_loss_t = self.vali(test_data, test_loader, criterion)
+            vali_loss = self.vali(vali_data, vali_loader, criterion)
+            test_loss = self.vali(test_data, test_loader, criterion)
             
             torch.save(self.model.state_dict(), path + self.args.model_id +'_last_checkpoint.pth')
             
@@ -201,15 +203,15 @@ class Exp_Main(Exp_Basic):
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
 
-            train_loss_s = np.array(train_loss_s)
+            train_loss = np.array(train_loss)
             vali_loss = np.array(vali_loss)
             test_loss = np.array(test_loss)
 
-            np.save(save_path + 'train_loss.npy',train_loss_s)
-            np.save(save_path + 'vali_loss.npy', vali_loss_t)
-            np.save(save_path + 'test_loss.npy', test_loss_t)
+            np.save(save_path + 'train_loss.npy',train_loss)
+            np.save(save_path + 'vali_loss.npy', vali_loss)
+            np.save(save_path + 'test_loss.npy', test_loss)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f} ".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
             early_stopping(vali_loss, self.model, path, self.args.model_id)
             if early_stopping.early_stop:
@@ -221,7 +223,6 @@ class Exp_Main(Exp_Basic):
         best_model_path = path + self.args.model_id + '_best_checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
         
-
         return self.model
 
     def test(self, setting, test=0):
@@ -243,7 +244,8 @@ class Exp_Main(Exp_Basic):
 
         preds = []
         trues = []
-        reconx = []
+        recon_xs = []
+        imputed_xs = []
         imputation = []
         inputx = []
         # './test_results/' + setting + '/'
@@ -263,7 +265,7 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output,imputed = self.model(batch_x)
+                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                         else:
                             pass
                         
@@ -272,7 +274,7 @@ class Exp_Main(Exp_Basic):
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output, imputed = self.model(batch_x)
+                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                     else:
                         pass
 
@@ -280,27 +282,31 @@ class Exp_Main(Exp_Basic):
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
                 pred = states.detach().cpu().numpy()
-                recon = recon_output.detach().cpu().numpy()
-                imputed = imputed.detach().cpu().numpy()
                 true = batch_y.detach().cpu().numpy()
+                recon = recon_output.detach().cpu().numpy()
+                imputed = imputed_x.detach().cpu().numpy()
+                imputed_s = seasonal_init.detach().cpu().numpy()
+                recon_output = recon_output.detach().cpu().numpy()
 
                 preds.append(pred)
                 trues.append(true)
-                reconx.append(recon)
+                imputed_xs.append(imputed_s)
+                recon_xs.append(recon)
                 imputation.append(imputed)
                 inputx.append(batch_x.detach().cpu().numpy())
 
-                if i % 10 == 0:
-                    input = batch_x.detach().cpu().numpy()
-                    gt = np.concatenate(
-                        (input[0, :, -1], true[0, :, -1]), axis=0)
-                    pd = np.concatenate(
-                        (input[0, :, -1], pred[0, :, -1]), axis=0)
-                    visual(gt, pd, os.path.join(folder_path, str(i) + '.pdf'))
+                # if i % 10 == 0:
+                #     input = batch_x.detach().cpu().numpy()
+                #     gt = np.concatenate(
+                #         (input[0, :, -1], true[0, :, -1]), axis=0)
+                #     pd = np.concatenate(
+                #         (input[0, :, -1], pred[0, :, -1]), axis=0)
+                #     visual(gt, pd, os.path.join(folder_path, str(i) + '.pdf'))
 
         preds = np.array(preds)
         trues = np.array(trues)
-        reconx = np.array(reconx)
+        imputed_xs = np.array(imputed_xs)
+        recon_xs = np.array(recon_xs)
         imputation = np.array(imputation)
         inputx = np.array(inputx)
         
@@ -309,7 +315,8 @@ class Exp_Main(Exp_Basic):
 
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-        reconx = reconx.reshape(-1, reconx.shape[-2], reconx.shape[-1])
+        imputed_xs = imputed_xs.reshape(-1, imputed_xs.shape[-2], imputed_xs.shape[-1])
+        recon_xs = recon_xs.reshape(-1, recon_xs.shape[-2], recon_xs.shape[-1])
         imputation = imputation.reshape(-1, imputation.shape[-2], imputation.shape[-1])
         inputx = inputx.reshape(-1, inputx.shape[-2], inputx.shape[-1])
         # x_mark = x_mark.reshape(-1, x_mark.shape[-2], x_mark.shape[-1])
@@ -333,9 +340,10 @@ class Exp_Main(Exp_Basic):
                 np.array([mae, mse, rmse, mape, mspe, rse, corr]))
         np.save(save_path + 'BIVA_pred.npy', preds)
         np.save(save_path + 'BIVA_trues.npy', trues)
-        np.save(save_path + 'BIVA_recons.npy',reconx)
+        np.save(save_path + 'BIVA_recons.npy',recon_xs)
         np.save(save_path + 'BIVA_imputation.npy',imputation)
         np.save(save_path + 'BIVA_inputs.npy', inputx)
+        np.save(save_path + 'BIVA_imputed_xs.npy', imputed_xs)
         # np.save(save_path + 'x_mark.npy', x_mark)
         # np.save(save_path + 'y_mark.npy', y_mark)
         return preds, trues, inputx, mae, mse, rmse, mape, mspe, rse, corr
@@ -363,18 +371,18 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, recon_output, imputed = self.model(batch_x)
+                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                         else:
                             pass
                 else:
                     if 'BIVA' in self.args.model:
-                        states, recon_output, imputed = self.model(batch_x)
+                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                     else:
                         pass
 
                 pred = states.detach().cpu().numpy()  # .squeeze()
                 preds.append(pred)
-                imputation.append(imputed)
+                imputation.append(imputed_x)
 
         preds = np.array(preds)
         imputation = np.array(imputation)
