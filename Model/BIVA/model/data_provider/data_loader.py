@@ -169,8 +169,10 @@ class Dataset_BIVA(Dataset):
         seq_x = self.set_lag_missing(seq_x, self.var_info,'M').values
         
         if self.pred_len == 1:
+            r_begin = s_begin
             r_end = s_begin + self.seq_len
-            seq_y = self.data_y[r_end-1:r_end].values
+            seq_y = self.data_y[r_begin:r_end].values
+            # seq_y = self.data_y[r_end-1:r_end].values
         else:
             # temp multi step prediction
             df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
@@ -187,7 +189,7 @@ class Dataset_BIVA(Dataset):
         # seq_x_mark = self.data_stamp[s_begin:s_end].values
         # seq_y_mark = self.data_stamp_t[r_end-1:r_end].values
         
-        return seq_x, seq_y, #seq_x_mark, seq_y_mark
+        return seq_x, seq_y #seq_x_mark, seq_y_mark
 
     def __len__(self):
         return len(self.data_x) - self.seq_len + 1
