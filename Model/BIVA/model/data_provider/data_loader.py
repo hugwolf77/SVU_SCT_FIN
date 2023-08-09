@@ -172,6 +172,7 @@ class Dataset_BIVA(Dataset):
             r_end = s_begin + self.seq_len
             seq_y = self.data_y[r_end-1:r_end]
         else:
+            # temp multi step prediction
             df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
             df_data_t = df_Q[[self.target]]
             df_data_t_cols = df_data_t.columns
