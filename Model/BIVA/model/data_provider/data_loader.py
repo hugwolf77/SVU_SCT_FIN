@@ -39,7 +39,6 @@ class Dataset_BIVA(Dataset):
         self.root_path = root_path
         self.data_path = data_path
         self.period = {'M': ['2000-01','2023-03'], 'Q':['2000-01','2023-03']}
-        # self.period = {'M': ['2010-01','2023-01'], 'Q':['2010-03','2023-03']}
         self.start_M = self.period['M'][0]
         self.end_M = self.period['M'][1]
         self.start_Q = self.period['Q'][0]
@@ -71,8 +70,8 @@ class Dataset_BIVA(Dataset):
         df_Q = df_Q.loc[self.start_Q:self.end_Q]
         df_Q = self.repeat_label_row(df=df_Q,pred_len=1,repeat=3)
         
-        num_train = int(len(df_M) * 0.8) 
-        num_test = int(len(df_M) * 0.1)
+        num_train = int(len(df_M) * 0.79) 
+        num_test = int(len(df_M) * 0.11)
         num_vali = len(df_M) - num_train - num_test
         border1s = [0, num_train - self.seq_len, len(df_M) - num_test - self.seq_len]
         border2s = [num_train, num_train + num_vali, len(df_M)]
@@ -125,8 +124,8 @@ class Dataset_BIVA(Dataset):
             data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
             
         else:
-            data = df_data #.values
-            data_t = df_data_t #.values
+            data = df_data.values
+            data_t = df_data_t.values
 
         # data_stamp_data_M
         df_stamp =  data.index
@@ -171,8 +170,8 @@ class Dataset_BIVA(Dataset):
         if self.pred_len == 1:
             r_begin = s_begin
             r_end = s_begin + self.seq_len
-            seq_y = self.data_y[r_begin:r_end].values
-            # seq_y = self.data_y[r_end-1:r_end].values
+            # seq_y = self.data_y[r_begin:r_end].values
+            seq_y = self.data_y[r_end-1:r_end].values
         else:
             # temp multi step prediction
             df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
