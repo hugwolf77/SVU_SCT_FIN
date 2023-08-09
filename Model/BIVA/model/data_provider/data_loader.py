@@ -115,6 +115,7 @@ class Dataset_BIVA(Dataset):
             df_data_t_cols = df_data_t.columns
             df_data_t_index = df_data_t.index
             
+            print(f"df_data.shape:{df_data.shape}, df_data_t.shape:{df_data_t.shape}")
             self.scaler_m.fit(train_data.values)
             data = self.scaler_m.fit_transform(df_data.values)
             self.scaler_q.fit(train_data_t.values)
@@ -122,7 +123,6 @@ class Dataset_BIVA(Dataset):
             
             data = pd.DataFrame(data,columns=df_data_cols, index=df_data_index)
             data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
-            print(f"data.shape:{data.shape}, data_t.shape:{data_t.shape}")
             
         else:
             data = df_data.values
