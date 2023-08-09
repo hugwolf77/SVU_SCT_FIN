@@ -69,7 +69,6 @@ class Dataset_BIVA(Dataset):
         df_M = df_M.loc[self.start_M:self.end_M]
         df_Q = df_Q.loc[self.start_Q:self.end_Q]
         df_Q = self.repeat_label_row(df=df_Q,pred_len=1,repeat=3)
-        print(f"df_M.shape:{df_M.shape}, df_Q.shape:{df_Q.shape}")
         
         num_train = int(len(df_M) * 0.80) 
         num_test = int(len(df_M) * 0.10)
@@ -123,6 +122,7 @@ class Dataset_BIVA(Dataset):
             
             data = pd.DataFrame(data,columns=df_data_cols, index=df_data_index)
             data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
+            print(f"data.shape:{data.shape}, data_t.shape:{data_t.shape}")
             
         else:
             data = df_data.values
