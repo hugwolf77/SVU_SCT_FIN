@@ -170,7 +170,7 @@ class Dataset_BIVA(Dataset):
         
         if self.pred_len == 1:
             r_end = s_begin + self.seq_len
-            seq_y = self.data_y[r_end-1:r_end]
+            seq_y = self.data_y[r_end-1:r_end].values
         else:
             # temp multi step prediction
             df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
@@ -180,10 +180,12 @@ class Dataset_BIVA(Dataset):
             data_t = self.scaler_q.fit_transform(df_data_t.values)
             data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
             self.data_y = data_t[self.border1_v:self.border2_v]
+            r_end = s_begin + self.seq_len*self.pred_len
+            seq_y = self.data_y[r_end-self.pred_len:r_end].values
         
         # time feagure index       
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp_t[r_end-1:r_end]
+        # seq_x_mark = self.data_stamp[s_begin:s_end].values
+        # seq_y_mark = self.data_stamp_t[r_end-1:r_end].values
         
         return seq_x, seq_y, #seq_x_mark, seq_y_mark
 
