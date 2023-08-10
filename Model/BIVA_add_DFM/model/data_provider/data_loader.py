@@ -38,7 +38,7 @@ class Dataset_BIVA(Dataset):
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
-        self.period = {'M': ['2000-01','2023-01'], 'Q':['2000-03','2023-03']}
+        self.period = {'M': ['2000-01','2023-06'], 'Q':['2000-01','2023-06']}
         self.start_M = self.period['M'][0]
         self.end_M = self.period['M'][1]
         self.start_Q = self.period['Q'][0]
@@ -57,8 +57,10 @@ class Dataset_BIVA(Dataset):
         self.scaler_q = MinMaxScaler()
         
         path = os.path.join(self.root_path, self.data_path)
-        
         df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_timeindex(path)
+        
+        # df_Q = df_Q_trans
+        # df_M = df_M_trans
         
         cols_M = list(df_M.columns)
         cols_Q = list(df_Q.columns)
@@ -66,25 +68,22 @@ class Dataset_BIVA(Dataset):
         df_Q = df_Q[cols_Q + [self.target]]
         df_M = df_M.loc[self.start_M:self.end_M]
         df_Q = df_Q.loc[self.start_Q:self.end_Q]
+        df_Q = self.repeat_label_row(df=df_Q,pred_len=1,repeat=3)
+        # print(f"df_M.shape:{df_M.shape}, df_Q.shape:{df_Q.shape}")
         
-        # M
-        num_train = int(len(df_M) * 0.8) 
-        num_test = int(len(df_M) * 0.1)
+        num_train = int(len(df_M) * 0.80) 
+        num_test = int(len(df_M) * 0.10)
         num_vali = len(df_M) - num_train - num_test
         border1s = [0, num_train - self.seq_len, len(df_M) - num_test - self.seq_len]
         border2s = [num_train, num_train + num_vali, len(df_M)]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
+        self.border1_v = border1 * self.pred_len
+        self.border2_v = border2 * self.pred_len
         
-        # Q       
-        border1s_Q = [0, (num_train - self.seq_len)//3, (len(df_M) - num_test - self.seq_len)//3]
-        border2s_Q = [num_train//3, (num_train + num_vali)//3, len(df_M)//3]
-
-        border1_Q = border1s_Q[self.set_type]
-        border2_Q = border2s_Q[self.set_type]
-
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
+                # cols_data = df_M.columns[1:]
                 df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
             elif self.features == 'S':
@@ -93,6 +92,7 @@ class Dataset_BIVA(Dataset):
                 
         elif self.set_type == 1:
             if self.features == 'M' or self.features == 'MS':
+                # cols_data = df_M.columns[1:]
                 df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
             elif self.features == 'S':
@@ -100,6 +100,7 @@ class Dataset_BIVA(Dataset):
                 df_data_t = df_Q[[self.target]]
         else:
             if self.features == 'M' or self.features == 'MS':
+                # cols_data = df_M.columns[1:]
                 df_data = df_M[cols_M]
                 df_data_t = df_Q[[self.target]]
             elif self.features == 'S':
@@ -111,7 +112,7 @@ class Dataset_BIVA(Dataset):
             df_data_cols = df_data.columns
             df_data_index = df_data.index
             
-            train_data_t = df_data_t[border1s_Q[0]:border2s_Q[0]]
+            train_data_t = df_data_t[border1s[0]:border2s[0]]
             df_data_t_cols = df_data_t.columns
             df_data_t_index = df_data_t.index
             
@@ -124,11 +125,12 @@ class Dataset_BIVA(Dataset):
             data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
             
         else:
-            data = df_data 
-            data_t = df_data_t 
+            data = df_data.values
+            data_t = df_data_t.values
 
         # data_stamp_data_M
         df_stamp =  data.index
+        # df_stamp['date'] = pd.to_datetime(df_stamp.date)
         if self.timeenc == 0:
             df_stamp['month'] = df_stamp.apply(lambda row: row.month, 1)
             df_stamp['day'] = df_stamp.apply(lambda row: row.day, 1)
@@ -141,7 +143,8 @@ class Dataset_BIVA(Dataset):
             data_stamp = df_stamp.values
 
         # data_stamp_target_Q
-        df_stamp_t = data_t.index 
+        df_stamp_t = data_t.index # df_Q.index[border1:border2]
+        # df_stamp_t['date'] = pd.to_datetime(df_stamp_t.date)
         if self.timeenc == 0:
             df_stamp_t['month'] = df_stamp_t.apply(lambda row: row.month, 1)
             df_stamp_t['day'] = df_stamp_t.apply(lambda row: row.day, 1)
@@ -154,9 +157,9 @@ class Dataset_BIVA(Dataset):
             data_stamp_t = df_stamp_t.values
 
         self.data_x = data[border1:border2]
-        self.data_y = data_t[border1_Q:border2_Q]
+        self.data_y = data_t[border1:border2]
         self.data_stamp = data_stamp[border1:border2]
-        self.data_stamp_t = data_stamp_t[border1_Q:border2_Q]
+        self.data_stamp_t = data_stamp_t[border1:border2]
 
     def __getitem__(self, index):
         s_begin = index
@@ -165,23 +168,27 @@ class Dataset_BIVA(Dataset):
         # set lag seq_x
         seq_x = self.set_lag_missing(seq_x, self.var_info,'M').values
         
-        # calculate the start position of the label 
-        # considering the predict length and quarter index         
-        # state period is Q freq (so, take one more time step to forward)
-        r_q_index = s_end//3 # quater's month length
-        r_q_res   = s_end%3
-        set_pred_len = self.repeat_label_row(df=self.data_y,pred_len=self.pred_len,repeat=3) 
-        if r_q_res == 0:
-            r_begin =  r_q_index*self.pred_len - self.pred_len
-            r_end = r_begin + self.pred_len
-        else:
-            r_begin =  r_q_index*self.pred_len - self.pred_len + (self.pred_len*r_q_res)
-            r_end = r_begin + self.pred_len
-        seq_y = set_pred_len[r_begin:r_end].values
+        r_begin = s_begin
+        r_end = s_begin + self.seq_len
+        # seq_y = self.data_y[r_begin:r_end].values
+        seq_y = self.data_y[r_end-1:r_end].values
+        
+        # if self.pred_len == 1:
+        # else:
+        #     # temp multi step prediction
+        #     df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
+        #     df_data_t = df_Q[[self.target]]
+        #     df_data_t_cols = df_data_t.columns
+        #     df_data_t_index = df_data_t.index
+        #     data_t = self.scaler_q.fit_transform(df_data_t.values)
+        #     data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
+        #     self.data_y = data_t[self.border1_v:self.border2_v]
+        #     r_end = s_begin + self.seq_len*self.pred_len
+        #     seq_y = self.data_y[r_end-self.pred_len:r_end].values
         
         # time feagure index       
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
+        # seq_x_mark = self.data_stamp[s_begin:s_end].values
+        # seq_y_mark = self.data_stamp_t[r_end-1:r_end].values
         
         return seq_x, seq_y #seq_x_mark, seq_y_mark
 
@@ -190,191 +197,6 @@ class Dataset_BIVA(Dataset):
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
-
-
-### EDIT
-class Dataset_DFM(Dataset):
-    def __init__(self, root_path, flag='train', size=None, features='MS', data_path='custom.csv',
-                 target='GDP', scale=True, inverse=False, timeenc=0, freq='m', cols=None):
-        # info
-        if size == None:
-            self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
-            self.pred_len = 24 * 4
-        else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
-        # init
-        assert flag in ['train', 'test', 'val']
-        type_map = {'train': 0, 'val': 1, 'test': 2}
-        self.set_type = type_map[flag]
-
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-        self.cols = cols
-        self.root_path = root_path
-        self.data_path = data_path
-        self.period = {'M': ['2000-01','2023-01'], 'Q':['2000-03','2023-03']}
-        self.start_M = self.period['M'][0]
-        self.end_M = self.period['M'][1]
-        self.start_Q = self.period['Q'][0]
-        self.end_Q = self.period['Q'][1]
-        
-        self.load_data_DFM = load_data_DFM
-        self.load_data_timeindex = load_data_timeindex
-        self.set_lag_missing = set_lag_missing
-        self.repeat_label_row = repeat_label_row
-        
-        self.__read_data__()
-
-
-    def __read_data__(self):
-        self.scaler_m = MinMaxScaler()
-        self.scaler_q = MinMaxScaler()
-        
-        path = os.path.join(self.root_path, self.data_path)
-        
-        df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_timeindex(path)
-        
-        cols_M = list(df_M_trans.columns)
-        cols_Q = list(df_Q_trans.columns)
-        cols_Q.remove(self.target)
-        df_Q_trans = df_Q_trans[cols_Q + [self.target]]
-        df_M_trans = df_M_trans.loc[self.start_M:self.end_M]
-        df_Q_trans = df_Q_trans.loc[self.start_Q:self.end_Q]
-        
-        # M
-        num_train = int(len(df_M_trans) * 0.8) 
-        num_test = int(len(df_M_trans) * 0.1)
-        num_vali = len(df_M_trans) - num_train - num_test
-        border1s = [0, num_train - self.seq_len, len(df_M_trans) - num_test - self.seq_len]
-        border2s = [num_train, num_train + num_vali, len(df_M_trans)]
-        border1 = border1s[self.set_type]
-        border2 = border2s[self.set_type]
-        
-        # Q       
-        border1s_Q = [0, (num_train - self.seq_len)//3, (len(df_M_trans) - num_test - self.seq_len)//3]
-        border2s_Q = [num_train//3, (num_train + num_vali)//3, len(df_M_trans)//3]
-
-        border1_Q = border1s_Q[self.set_type]
-        border2_Q = border2s_Q[self.set_type]
-
-        if self.set_type == 0:
-            if self.features == 'M' or self.features == 'MS':
-                df_data = df_M_trans[cols_M]
-                df_data_t = df_Q_trans[[self.target]]
-            elif self.features == 'S':
-                df_data = df_M[cols_M]
-                df_data_t = df_Q_trans[[self.target]]
-                
-        elif self.set_type == 1:
-            if self.features == 'M' or self.features == 'MS':
-                df_data = df_M_trans[cols_M]
-                df_data_t = df_Q_trans[[self.target]]
-            elif self.features == 'S':
-                df_data = df_M_trans[cols_M]
-                df_data_t = df_Q_trans[[self.target]]
-        else:
-            if self.features == 'M' or self.features == 'MS':
-                df_data = df_M_trans[cols_M]
-                df_data_t = df_Q_trans[[self.target]]
-            elif self.features == 'S':
-                df_data = df_M_trans[cols_M]
-                df_data_t = df_Q_trans[[self.target]]
-
-        if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
-            df_data_cols = df_data.columns
-            df_data_index = df_data.index
-            
-            train_data_t = df_data_t[border1s_Q[0]:border2s_Q[0]]
-            df_data_t_cols = df_data_t.columns
-            df_data_t_index = df_data_t.index
-            
-            self.scaler_m.fit(train_data.values)
-            data = self.scaler_m.fit_transform(df_data.values)
-            self.scaler_q.fit(train_data_t.values)
-            data_t = self.scaler_q.fit_transform(df_data_t.values)
-            
-            data = pd.DataFrame(data,columns=df_data_cols, index=df_data_index)
-            data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
-            
-        else:
-            data = df_data 
-            data_t = df_data_t 
-
-        # data_stamp_data_M
-        df_stamp =  data.index
-        if self.timeenc == 0:
-            df_stamp['month'] = df_stamp.apply(lambda row: row.month, 1)
-            df_stamp['day'] = df_stamp.apply(lambda row: row.day, 1)
-            df_stamp['weekday'] = df_stamp.apply(lambda row: row.weekday(), 1)
-            df_stamp['hour'] = df_stamp.apply(lambda row: row.hour, 1)
-            data_stamp = df_stamp_t.drop(['date'], 1).values
-        elif self.timeenc == 1:
-            data_stamp = time_features(pd.to_datetime(df_stamp.values), freq=self.freq)
-            data_stamp = data_stamp.transpose(1, 0)
-            data_stamp = df_stamp.values
-
-        # data_stamp_target_Q
-        df_stamp_t = data_t.index 
-        if self.timeenc == 0:
-            df_stamp_t['month'] = df_stamp_t.apply(lambda row: row.month, 1)
-            df_stamp_t['day'] = df_stamp_t.apply(lambda row: row.day, 1)
-            df_stamp_t['weekday'] = df_stamp_t.apply(lambda row: row.weekday(), 1)
-            df_stamp_t['hour'] = df_stamp_t.apply(lambda row: row.hour, 1)
-            data_stamp_t = df_stamp_t.drop(['date'], 1).values
-        elif self.timeenc == 1:
-            data_stamp_t = time_features(pd.to_datetime(df_stamp_t.values), freq=self.freq)
-            data_stamp_t = data_stamp_t.transpose(1, 0)
-            data_stamp_t = df_stamp_t.values
-
-        self.data_x = data[border1:border2]
-        self.data_y = data_t[border1_Q:border2_Q]
-        self.data_stamp = data_stamp[border1:border2]
-        self.data_stamp_t = data_stamp_t[border1_Q:border2_Q]
-
-    def __getitem__(self, index):
-        s_begin = 0
-        ind = index
-        s_end = s_begin + self.seq_len
-        seq_x = self.data_x[s_begin:s_end]
-        # set lag seq_x
-        seq_x = self.set_lag_missing(seq_x, self.var_info,'M').values
-        
-        # calculate the start position of the label 
-        # considering the predict length and quarter index         
-        # state period is Q freq (so, take one more time step to forward)
-        r_q_index = s_end//3 # quater's month length
-        r_q_res   = s_end%3
-        set_pred_len = self.repeat_label_row(df=self.data_y,pred_len=self.pred_len,repeat=3) 
-        if r_q_res == 0:
-            r_begin =  r_q_index*self.pred_len - self.pred_len
-            r_end = r_begin + self.pred_len
-        else:
-            r_begin =  r_q_index*self.pred_len - self.pred_len + (self.pred_len*r_q_res)
-            r_end = r_begin + self.pred_len
-        seq_y = set_pred_len[r_begin:r_end].values
-        
-        # time feagure index       
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
-        
-        return seq_x, seq_y #seq_x_mark, seq_y_mark
-
-    def __len__(self):
-        return len(self.data_x) - self.seq_len + 1
-
-    def inverse_transform(self, data):
-        return self.scaler.inverse_transform(data)
-
-
-
     
 class Dataset_Pred(Dataset):
     def __init__(self, root_path, flag='pred', size=None, features='MS', data_path='custom.csv',

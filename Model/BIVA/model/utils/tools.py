@@ -74,22 +74,24 @@ def transform_adf(df, var_info):
         #     return print(f"transformed data column variable stationary Adfuller Test is fail: variable name ={col},{diff},{res}")
     return df_trans
  
-def load_data_DFM(data_path):
+def load_data_DFM(data_path, start, end):
     # load data
     # Quatery
     df_Q = pd.read_excel(data_path, index_col='date', sheet_name='df_Q', header=0)
-    p_rng_q = pd.period_range('1960Q2', '2023Q1', freq='Q-FEB')
+    df_Q = df_Q.loc[start:end]
+    p_rng_q = pd.period_range(df_Q.index[0], df_Q.index[-1], freq='Q-FEB')
     df_Q = df_Q.set_index(p_rng_q)
     df_Q = df_Q.iloc[:,:].astype('float')
     df_Q.index.name = 'date'
-    # df_Q = remove_outliers(df_Q)
+    df_Q = remove_outliers(df_Q)
     # Monthly
     df_M = pd.read_excel(data_path, index_col='date', sheet_name='df_M', header=0)
-    p_rng_m = pd.period_range('1970-01-01', '2023-06-01', freq='m')
+    df_M = df_M.loc[start:end]
+    p_rng_m = pd.period_range(df_M.index[0], df_M.index[-1], freq='m')
     df_M = df_M.set_index(p_rng_m)
     df_M = df_M.iloc[:,:].astype('float')
     df_M.index.name = 'date'
-    # df_M = remove_outliers(df_M)
+    df_M = remove_outliers(df_M)
     # Variable Info
     var_info = pd.read_excel(data_path, sheet_name='df_var_info', header=0)
     # diff transform for stationary
@@ -189,9 +191,9 @@ def adjust_learning_rate(optimizer, epoch, args):
             lr_adjust = {epoch: args.learning_rate * (0.95 ** (epoch // 1))}
 
     elif args.lradj == '1':
-        lr_adjust = {epoch: args.learning_rate * (0.9 ** (epoch // 1))}
-        if lr_adjust[epoch] <= 0.001:
-            lr_adjust[epoch] = 0.001
+        lr_adjust = {epoch: args.learning_rate * (0.95 ** (epoch // 1))}
+        if lr_adjust[epoch] <= 0.0005:
+            lr_adjust[epoch] = 0.0005
 
     elif args.lradj == '2':
         lr_adjust = {
