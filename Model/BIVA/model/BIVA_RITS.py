@@ -163,6 +163,7 @@ class Model(nn.Module):
             
             h = h * gamma_h
             x_h = self.hist_reg(h)
+            x_h = F.sigmoid(x_h)
             
             x_loss += torch.sum(torch.abs(torch.nan_to_num(x) - x_h) * m) / (torch.sum(m) + 1e-5)
 
