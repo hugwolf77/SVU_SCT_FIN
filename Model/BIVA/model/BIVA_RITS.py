@@ -45,6 +45,7 @@ class FeatureRegression(nn.Module):
 
     def forward(self, x):
         z_h = F.linear(x, self.W * Variable(self.m), self.b)
+        z_h = F.sigmoid(z_h)
         return z_h
 
 
@@ -160,13 +161,8 @@ class Model(nn.Module):
             gamma_h = self.temp_decay_h(d)
             gamma_x = self.temp_decay_x(d)
             
-            print(f"gamma_h:{gamma_h}")  #
-            print(f"gamma_x:{gamma_x}")  #
-
             h = h * gamma_h
             x_h = self.hist_reg(h)
-            
-            print(f"x_h : {x_h}")        #
             
             x_loss += torch.sum(torch.abs(torch.nan_to_num(x) - x_h) * m) / (torch.sum(m) + 1e-5)
 
@@ -176,9 +172,8 @@ class Model(nn.Module):
             x_loss += torch.sum(torch.abs(torch.nan_to_num(x) - z_h) * m) / (torch.sum(m) + 1e-5)
 
             alpha = self.weight_combine(torch.cat([gamma_x, m], dim=1))
-            c_h = alpha * z_h + (1 - alpha) * x_h
-            
-            print(f"c_h : {c_h}")        # 
+            # c_h = alpha * z_h + (1 - alpha) * x_h
+            c_h = torch.abs(0.5 * z_h + 0.5 * x_h)
             
             c_c = m * torch.nan_to_num(x) + (1 - m) * c_h
 
