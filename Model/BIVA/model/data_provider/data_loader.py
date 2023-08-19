@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
-from utils.tools import StandardScaler, load_data_timeindex, load_data_DFM, set_lag_missing, repeat_label_row
+from utils.tools import StandardScaler, load_data_timeindex, set_lag_missing, repeat_label_row
 from utils.timefeatures import time_features
 
 import warnings
@@ -44,7 +44,6 @@ class Dataset_BIVA(Dataset):
         self.start_Q = self.period['Q'][0]
         self.end_Q = self.period['Q'][1]
         
-        self.load_data_DFM = load_data_DFM
         self.load_data_timeindex = load_data_timeindex
         self.set_lag_missing = set_lag_missing
         self.repeat_label_row = repeat_label_row
@@ -57,10 +56,7 @@ class Dataset_BIVA(Dataset):
         self.scaler_q = MinMaxScaler()
         
         path = os.path.join(self.root_path, self.data_path)
-        df_Q, df_Q_trans, df_M, df_M_trans, self.var_info = self.load_data_timeindex(path)
-        
-        # df_Q = df_Q_trans
-        # df_M = df_M_trans
+        df_Q, _, df_M, _, self.var_info = self.load_data_timeindex(path)
         
         cols_M = list(df_M.columns)
         cols_Q = list(df_Q.columns)

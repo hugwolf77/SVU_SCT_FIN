@@ -39,65 +39,45 @@ def adf_test(transformed):
     return test_result
         
 def transform_adf(df, var_info):
+    df_trans = pd.DataFrame(columns=df.columns,index=df.index)
     for col in df.columns:
         # print(f"transform_column : {col}")
+        # print(f"transform_diff : {diff}")
         diff = var_info[var_info['ID'] == col]['transform'].values[0]
         lag = var_info[var_info['ID'] == col]['LAG'].values[0]
-        df_trans = df.copy()
         # transform N test
         if diff == 'Origin':
-            treated = remove_outliers(df[col])
-            transformed = treated.dropna()
-            res = adf_test(transformed)
+            transformed = df[col]
+            treated = remove_outliers(transformed)
+            # res = adf_test(transformed.dropna())
+            df_trans[col] = transformed
+            # df_trans = pd.concat([df_trans,treated],axis=1)
         elif diff == 'Diff-1':
-            treated = remove_outliers(df[col])
-            transformed = treated.diff().dropna()
-            res = adf_test(transformed)
+            transformed = df[col].diff().dropna()
+            treated = remove_outliers(transformed)
+            # res = adf_test(transformed.dropna())
             df_trans[col] = transformed
+            # df_trans = pd.concat([df_trans,treated],axis=1)
         elif diff == 'Log-1':
-            # error transform log list
-            if col in ['A1', 'A2', 'A3', 'A4', 'A5', 'A6']:
-                res = 'X'
-            else:
-                treated = remove_outliers(df[col])
-                transformed = np.log(treated).dropna()
-                res = adf_test(transformed)
+            transformed = np.log(df[col])#.dropna()
+            treated = remove_outliers(transformed)
+            # res = adf_test(transformed.dropna())
             df_trans[col] = transformed
+            # df_trans = pd.concat([df_trans,treated],axis=1)
         elif diff == 'Diff-2':
-            treated = remove_outliers(df[col])
-            transformed = treated.diff().diff().dropna()
-            res = adf_test(transformed)
+            transformed = df[col].diff().diff().dropna()
+            treated = remove_outliers(transformed)
+            # res = adf_test(transformed.dropna())
             df_trans[col] = transformed
+            # df_trans = pd.concat([df_trans,treated],axis=1)
         else:
             print(f"transformation not orderred")
+            raise
         # if res == 'N' or res == 'X':
         #     return print(f"transformed data column variable stationary Adfuller Test is fail: variable name ={col},{diff},{res}")
     return df_trans
+
  
-def load_data_DFM(data_path, start, end):
-    # load data
-    # Quatery
-    df_Q = pd.read_excel(data_path, index_col='date', sheet_name='df_Q', header=0)
-    df_Q = df_Q.loc[start:end]
-    p_rng_q = pd.period_range(df_Q.index[0], df_Q.index[-1], freq='Q-FEB')
-    df_Q = df_Q.set_index(p_rng_q)
-    df_Q = df_Q.iloc[:,:].astype('float')
-    df_Q.index.name = 'date'
-    df_Q = remove_outliers(df_Q)
-    # Monthly
-    df_M = pd.read_excel(data_path, index_col='date', sheet_name='df_M', header=0)
-    df_M = df_M.loc[start:end]
-    p_rng_m = pd.period_range(df_M.index[0], df_M.index[-1], freq='m')
-    df_M = df_M.set_index(p_rng_m)
-    df_M = df_M.iloc[:,:].astype('float')
-    df_M.index.name = 'date'
-    df_M = remove_outliers(df_M)
-    # Variable Info
-    var_info = pd.read_excel(data_path, sheet_name='df_var_info', header=0)
-    # diff transform for stationary
-    df_Q_trans = transform_adf(df_Q, var_info)
-    df_M_trans = transform_adf(df_M, var_info)
-    return df_Q, df_Q_trans, df_M, df_M_trans, var_info
 '''
     - pytorch dataloader default collate_fn fail pandas period_Index
 '''
@@ -119,6 +99,7 @@ def load_data_timeindex(data_path):
     df_Q_trans = transform_adf(df_Q, var_info)
     df_M_trans = transform_adf(df_M, var_info)
     return df_Q, df_Q_trans, df_M, df_M_trans, var_info
+
 
 def set_lag_missing(df_trans, var_info, freq):
     df_set_lag = df_trans.copy()
