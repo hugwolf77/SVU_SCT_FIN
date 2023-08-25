@@ -203,15 +203,15 @@ class Model(nn.Module):
         recon_output, mu, logvar, seasonal_enc_output_x, seasonal_output_z = self.LSTM_VAE(seasonal_init)
         VAE_loss,_,_ = self.loss_function(recon_output, seasonal_init, mu, logvar)
         
-        print(f"seasonal_output_z.shape: {seasonal_init.shape}")
-        print(f"recon_output.shape: {recon_output.shape}")
-        raise
+        # print(f"seasonal_output_z.shape: {seasonal_init.shape}")
+        # print(f"recon_output.shape: {recon_output.shape}")
+        # raise
         # 
         seasonal_output_z = seasonal_output_z.permute(0, 2, 1)
         # seasonal_enc_output_x = seasonal_enc_output_x.permute(0, 2, 1)
         # seasonal_output_x_z = torch.cat([seasonal_enc_output_x,seasonal_output_z],dim=1)
         recon_output = recon_output.permute(0, 2, 1)
-        seasonal_output_x_z = torch.cat([recon_output,seasonal_output_z],dim=1)
+        seasonal_output_x_z = torch.cat([seasonal_enc_output_x,recon_output],dim=1)
         
         seasonal_output = self.Conv1d_Seasonal(seasonal_output_x_z)
         seasonal_output = self.Linear_Seasonal(seasonal_output)
