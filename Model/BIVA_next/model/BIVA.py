@@ -149,8 +149,16 @@ class Model(nn.Module):
             self.alpha = nn.Parameter(torch.ones(1, 1, 1))
 
         if self.conv1d:
-            self.Conv1d_Seasonal = nn.Conv1d(
-                self.latent_size*2, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            # self.Conv1d_Seasonal = nn.Conv1d(
+            #     self.latent_size*2, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            
+            self.Conv1d_Seasonal_1 = nn.Conv1d(
+                self.latent_size*2, self.latent_size, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Conv1d_Seasonal_2 = nn.Conv1d(
+                self.latent_size, int(self.latent_size/2), kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Conv1d_Seasonal_3 = nn.Conv1d(
+                int(self.latent_size/2), 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)            
+            
             self.Linear_Seasonal = nn.Linear(self.seq_len, self.pred_len)
             self.Linear_Seasonal.weight = nn.Parameter(
                 (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
@@ -203,21 +211,22 @@ class Model(nn.Module):
         recon_output, mu, logvar, seasonal_enc_output_x, seasonal_output_z = self.LSTM_VAE(seasonal_init)
         VAE_loss,_,_ = self.loss_function(recon_output, seasonal_init, mu, logvar)
         
-        print(f"seasonal_output_z.shape: {seasonal_output_z.shape}")
-        print(f"seasonal_enc_output_x.shape: {seasonal_enc_output_x.shape}")
-        print(f"recon_output.shape: {recon_output.shape}")
-        raise
+        # print(f"seasonal_output_z.shape: {seasonal_output_z.shape}")
+        # print(f"seasonal_enc_output_x.shape: {seasonal_enc_output_x.shape}")
+        # print(f"recon_output.shape: {recon_output.shape}")
+        # raise
         #
-        # seasonal_enc_output_x = seasonal_enc_output_x.permute(0, 2, 1) 
-        # seasonal_output_z = seasonal_output_z.permute(0, 2, 1)
-        # seasonal_output_x_z = torch.cat([seasonal_enc_output_x,seasonal_output_z],dim=1)
+        seasonal_enc_output_x = seasonal_enc_output_x.permute(0, 2, 1) 
+        seasonal_output_z = seasonal_output_z.permute(0, 2, 1)
+        seasonal_output_x_z = torch.cat([seasonal_enc_output_x,seasonal_output_z],dim=1)
         
-        seasonal_enc_output_x = seasonal_enc_output_x.permute(0, 2, 1)
-        recon_output = recon_output.permute(0, 2, 1)
-        seasonal_output_x_z = torch.cat([seasonal_enc_output_x,recon_output],dim=1)
+       
+        # seasonal_output = self.Conv1d_Seasonal(seasonal_output_x_z)
+        seasonal_output_1 = self.Conv1d_Seasonal_1(seasonal_output_x_z)
+        seasonal_output_2 = self.Conv1d_Seasonal_2(seasonal_output_1)
+        seasonal_output_3 = self.Conv1d_Seasonal_3(seasonal_output_2)
         
-        seasonal_output = self.Conv1d_Seasonal(seasonal_output_x_z)
-        seasonal_output = self.Linear_Seasonal(seasonal_output)
+        seasonal_output = self.Linear_Seasonal(seasonal_output_3)
 
         if self.combination:
             states = (seasonal_output*(self.alpha)) + (trend_output*(1-self.alpha))
