@@ -172,9 +172,9 @@ def adjust_learning_rate(optimizer, epoch, args):
             lr_adjust = {epoch: args.learning_rate * (0.95 ** (epoch // 1))}
 
     elif args.lradj == '1':
-        lr_adjust = {epoch: args.learning_rate * (0.95 ** (epoch // 1))}
-        if lr_adjust[epoch] <= 0.0001:
-            lr_adjust[epoch] = 0.0001
+        lr_adjust = {epoch: args.learning_rate * (0.96 ** (epoch // 1))}
+        if lr_adjust[epoch] <= 0.000001:
+            lr_adjust[epoch] = 0.000001
 
     elif args.lradj == '2':
         lr_adjust = {
