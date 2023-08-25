@@ -163,19 +163,16 @@ class Model(nn.Module):
             self.Linear_Seasonal.weight = nn.Parameter(
                 (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
+            # self.Conv1d_Trend = nn.Conv1d(
+            #     self.channels, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
 
+            self.Conv1d_Trend_1 = nn.Conv1d(
+                self.channels, int(self.channels/4), kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Conv1d_Trend_2 = nn.Conv1d(
+                int(self.channels/4), int(self.channels/16), kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Conv1d_Trend_3 = nn.Conv1d(
+                int(self.channels/16), 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
 
-            self.Conv1d_Trend = nn.Conv1d(
-                self.channels, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
-
-            # self.Conv1d_Trend_1 = nn.Conv1d(
-            #     self.channels, int(self.channels/4), kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
-            # self.Conv1d_Trend_2 = nn.Conv1d(
-            #     int(self.channels/4), int(self.channels/16), kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
-            # self.Conv1d_Trend_3 = nn.Conv1d(
-            #     int(self.channels/16), 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
-
-            
             
             self.Linear_Trend = nn.Linear(self.seq_len, self.pred_len)
             self.Linear_Trend.weight = nn.Parameter(
@@ -214,8 +211,10 @@ class Model(nn.Module):
         seasonal_init, trend_init = self.decomposition(imputed_x)
         # -- Trend --
         trend_init = trend_init.permute(0, 2, 1)
-        trend_output = self.Conv1d_Trend(trend_init)
-        trend_output = self.Linear_Trend(trend_output)
+        trend_output_1 = self.Conv1d_Trend_1(trend_init)
+        trend_output_2 = self.Conv1d_Trend_2(trend_output_1)
+        trend_output_3 = self.Conv1d_Trend_3(trend_output_2)
+        trend_output = self.Linear_Trend(trend_output_3)
         # print(f"trend_output.shape: {trend_output.shape}")
 
         # -- Seasonal --
