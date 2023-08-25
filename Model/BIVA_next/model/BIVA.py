@@ -173,14 +173,14 @@ class Model(nn.Module):
         """
         Computes the VAE loss function.
         """
-        kld_weight = 0.2  # Account for the minibatch samples from the dataset
-        # recons_weight = 
+        kld_weight = 0.5  # Account for the minibatch samples from the dataset
+        recons_weight = 0.5
         recons_loss = F.mse_loss(recons, input)
         kld_loss = torch.mean( -0.5 * torch.sum(1 + log_var - mu**2 - log_var.exp(), dim=1), dim=0 )
-        loss = recons_loss + kld_weight * kld_loss
+        loss = recons_weight * recons_loss  + kld_weight * kld_loss
         return torch.sum(loss), recons_loss, -kld_loss
 
-    def forward(self, x, y):
+    def forward(self, x):
         # x: [Batch, Input length, Channel]
         if self.RIN:
             x = self.RIN_func.set_RIN(x)
@@ -208,8 +208,11 @@ class Model(nn.Module):
         # raise
         # 
         seasonal_output_z = seasonal_output_z.permute(0, 2, 1)
-        seasonal_enc_output_x = seasonal_enc_output_x.permute(0, 2, 1)
-        seasonal_output_x_z = torch.cat([seasonal_enc_output_x,seasonal_output_z],dim=1)
+        # seasonal_enc_output_x = seasonal_enc_output_x.permute(0, 2, 1)
+        # seasonal_output_x_z = torch.cat([seasonal_enc_output_x,seasonal_output_z],dim=1)
+        recon_output = recon_output.permute(0, 2, 1)
+        seasonal_output_x_z = torch.cat([recon_output,seasonal_output_z],dim=1)
+        
         seasonal_output = self.Conv1d_Seasonal(seasonal_output_x_z)
         seasonal_output = self.Linear_Seasonal(seasonal_output)
 
