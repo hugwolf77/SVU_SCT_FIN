@@ -53,7 +53,7 @@ class Dataset_BIVA(Dataset):
 
     def __read_data__(self):
         self.scaler_m = MinMaxScaler()
-        self.scaler_q = MinMaxScaler()
+        # self.scaler_q = MinMaxScaler()
         
         path = os.path.join(self.root_path, self.data_path)
         df_Q, _, df_M, _, self.var_info = self.load_data_timeindex(path)
@@ -114,11 +114,11 @@ class Dataset_BIVA(Dataset):
             
             self.scaler_m.fit(train_data.values)
             data = self.scaler_m.fit_transform(df_data.values)
-            self.scaler_q.fit(train_data_t.values)
-            data_t = self.scaler_q.fit_transform(df_data_t.values)
+            # self.scaler_q.fit(train_data_t.values)
+            # data_t = self.scaler_q.fit_transform(df_data_t.values)
             
             data = pd.DataFrame(data,columns=df_data_cols, index=df_data_index)
-            data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
+            data_t = df_data_t # pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
             
         else:
             data = df_data.values
@@ -166,7 +166,6 @@ class Dataset_BIVA(Dataset):
         
         r_begin = s_begin
         r_end = s_begin + self.seq_len
-        # seq_y = self.data_y[r_begin:r_end].values
         seq_y = self.data_y[r_end-1:r_end].values
         
         # if self.pred_len == 1:
