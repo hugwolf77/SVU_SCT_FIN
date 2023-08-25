@@ -166,8 +166,7 @@ class Dataset_BIVA(Dataset):
         
         r_begin = s_begin
         r_end = s_begin + self.seq_len
-        # seq_y = self.data_y[r_begin:r_end].values
-        seq_y = self.data_y[r_end-1:r_end].values
+        seq_y = self.data_y[r_begin:r_end].values
         
         # if self.pred_len == 1:
         # else:

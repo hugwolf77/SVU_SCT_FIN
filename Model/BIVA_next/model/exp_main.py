@@ -65,13 +65,13 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
+                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x, batch_y)
                         else:
                             pass
 
                 else:
                     if 'BIVA' in self.args.model:
-                       states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
+                       states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x, batch_y)
                     else:
                         pass
 
@@ -140,7 +140,7 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
+                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x, batch_y)
                         else:
                             pass
 
@@ -156,7 +156,7 @@ class Exp_Main(Exp_Basic):
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
+                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x, batch_y)
                     else:
                         pass
 
@@ -265,7 +265,7 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
+                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x,batch_y)
                         else:
                             pass
                         
@@ -274,7 +274,7 @@ class Exp_Main(Exp_Basic):
 
                 else:
                     if 'BIVA' in self.args.model:
-                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
+                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x,batch_y)
                     else:
                         pass
 
@@ -371,12 +371,12 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'BIVA' in self.args.model:
-                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
+                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x,batch_y)
                         else:
                             pass
                 else:
                     if 'BIVA' in self.args.model:
-                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
+                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x,batch_y)
                     else:
                         pass
 

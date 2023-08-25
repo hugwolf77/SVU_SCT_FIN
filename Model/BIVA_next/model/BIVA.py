@@ -180,7 +180,7 @@ class Model(nn.Module):
         loss = recons_loss + kld_weight * kld_loss
         return torch.sum(loss), recons_loss, -kld_loss
 
-    def forward(self, x):
+    def forward(self, x, y):
         # x: [Batch, Input length, Channel]
         if self.RIN:
             x = self.RIN_func.set_RIN(x)
