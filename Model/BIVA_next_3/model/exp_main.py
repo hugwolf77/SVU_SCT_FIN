@@ -157,8 +157,7 @@ class Exp_Main(Exp_Basic):
                 else:
                     if 'BIVA' in self.args.model:
                         states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
-                        print(f"batch_y.shape: {batch_y.shape}, states.shape: {states.shape}")
-                        raise
+
                     else:
                         pass
 
