@@ -70,13 +70,13 @@ class Dataset_BIVA(Dataset):
         num_test = int(len(df_M) * 0.10)
         num_vali = len(df_M) - num_train - num_test
         border1s = [0, num_train - self.seq_len, len(df_M) - num_test - self.seq_len]
-        border2s = [num_train, num_train + num_vali, len(df_M)]
+        border2s = [num_train, num_train + num_vali, len(df_M) - (self.pred_len - 1)*3] # quart feq(3) * pred period 
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
         border1_v = border1 * self.pred_len
         border2_v = border2 * self.pred_len
-        print(f"border1,border2:{border1},{border2}")
-        print(f"border1_v,border2_v:{border1_v},{border2_v}")
+        # print(f"border1,border2:{border1},{border2}")
+        # print(f"border1_v,border2_v:{border1_v},{border2_v}")
         
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
