@@ -167,7 +167,7 @@ class Dataset_BIVA(Dataset):
         seq_x = self.set_lag_missing(seq_x, self.var_info,'M').values
 
         r_begin = s_begin * self.pred_len
-        r_end = s_begin + self.seq_len*self.pred_len
+        r_end = r_begin + self.seq_len*self.pred_len
         print(f"r_begin:{r_begin},r_end: {r_end}")
         seq_y = self.data_y[r_end-self.pred_len:r_end].values
 
