@@ -65,7 +65,7 @@ class Dataset_BIVA(Dataset):
         df_M = df_M.loc[self.start_M:self.end_M]
         df_Q = df_Q.loc[self.start_Q:self.end_Q]
         df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
-        # print(f"df_M.shape:{df_M.shape}, df_Q.shape:{df_Q.shape}")
+        print(f"df_M.shape:{df_M.shape}, df_Q.shape:{df_Q.shape}")
         # temp multi step prediction
         
         num_train = int(len(df_M) * 0.80) 
@@ -77,6 +77,7 @@ class Dataset_BIVA(Dataset):
         border2 = border2s[self.set_type]
         border1_v = border1 * self.pred_len
         border2_v = border2 * self.pred_len
+        print(f"border1_v:{border1_v}, border2_v:{border2_v}")
         
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
@@ -109,7 +110,7 @@ class Dataset_BIVA(Dataset):
             df_data_cols = df_data.columns
             df_data_index = df_data.index
             
-            train_data_t = df_data_t[border1s[0]:border2s[0]]
+            train_data_t = df_data_t[border1s[0]*self.pred_len:border2s[0]*self.pred_len]
             df_data_t_cols = df_data_t.columns
             df_data_t_index = df_data_t.index
             
@@ -167,6 +168,7 @@ class Dataset_BIVA(Dataset):
 
         r_begin = s_begin * self.pred_len
         r_end = s_begin + self.seq_len*self.pred_len
+        print(f"r_begin:{r_begin},r_end: {r_end}")
         seq_y = self.data_y[r_end-self.pred_len:r_end].values
 
         # time feagure index       
