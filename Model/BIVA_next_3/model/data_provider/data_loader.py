@@ -75,6 +75,8 @@ class Dataset_BIVA(Dataset):
         border2 = border2s[self.set_type]
         border1_v = border1 * self.pred_len
         border2_v = border2 * self.pred_len
+        print(f"border1,border2:{border1},{border2}")
+        print(f"border1_v,border2_v:{border1_v},{border2_v}")
         
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
