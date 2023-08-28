@@ -149,14 +149,31 @@ class Model(nn.Module):
             self.alpha = nn.Parameter(torch.ones(1, 1, 1))
 
         if self.conv1d:
-            self.Conv1d_Seasonal = nn.Conv1d(
-                self.latent_size*2, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            # self.Conv1d_Seasonal = nn.Conv1d(
+            #     self.latent_size*2, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            
+            self.Conv1d_Seasonal_1 = nn.Conv1d(
+                self.latent_size*2, self.latent_size, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Conv1d_Seasonal_2 = nn.Conv1d(
+                self.latent_size, int(self.latent_size/2), kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Conv1d_Seasonal_3 = nn.Conv1d(
+                int(self.latent_size/2), 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)            
+            
             self.Linear_Seasonal = nn.Linear(self.seq_len, self.pred_len)
             self.Linear_Seasonal.weight = nn.Parameter(
                 (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
 
-            self.Conv1d_Trend = nn.Conv1d(
-                self.channels, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            # self.Conv1d_Trend = nn.Conv1d(
+            #     self.channels, 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+
+            self.Conv1d_Trend_1 = nn.Conv1d(
+                self.channels, int(self.channels/4), kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Conv1d_Trend_2 = nn.Conv1d(
+                int(self.channels/4), int(self.channels/16), kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+            self.Conv1d_Trend_3 = nn.Conv1d(
+                int(self.channels/16), 1, kernel_size=self.conv_kernal, dilation=1, stride=1, groups=1)
+
+            
             self.Linear_Trend = nn.Linear(self.seq_len, self.pred_len)
             self.Linear_Trend.weight = nn.Parameter(
                 (1/self.seq_len)*torch.ones([self.pred_len, self.seq_len]))
@@ -173,11 +190,11 @@ class Model(nn.Module):
         """
         Computes the VAE loss function.
         """
-        kld_weight = 0.2  # Account for the minibatch samples from the dataset
-        # recons_weight = 
+        kld_weight = 0.5  # Account for the minibatch samples from the dataset
+        recons_weight = 0.5
         recons_loss = F.mse_loss(recons, input)
         kld_loss = torch.mean( -0.5 * torch.sum(1 + log_var - mu**2 - log_var.exp(), dim=1), dim=0 )
-        loss = recons_loss + kld_weight * kld_loss
+        loss = recons_weight * recons_loss  + kld_weight * kld_loss
         return torch.sum(loss), recons_loss, -kld_loss
 
     def forward(self, x):
@@ -194,8 +211,10 @@ class Model(nn.Module):
         seasonal_init, trend_init = self.decomposition(imputed_x)
         # -- Trend --
         trend_init = trend_init.permute(0, 2, 1)
-        trend_output = self.Conv1d_Trend(trend_init)
-        trend_output = self.Linear_Trend(trend_output)
+        trend_output_1 = self.Conv1d_Trend_1(trend_init)
+        trend_output_2 = self.Conv1d_Trend_2(trend_output_1)
+        trend_output_3 = self.Conv1d_Trend_3(trend_output_2)
+        trend_output = self.Linear_Trend(trend_output_3)
         # print(f"trend_output.shape: {trend_output.shape}")
 
         # -- Seasonal --
@@ -203,15 +222,22 @@ class Model(nn.Module):
         recon_output, mu, logvar, seasonal_enc_output_x, seasonal_output_z = self.LSTM_VAE(seasonal_init)
         VAE_loss,_,_ = self.loss_function(recon_output, seasonal_init, mu, logvar)
         
-        # print(f"seasonal_output_z.shape: {seasonal_init.shape}")
+        # print(f"seasonal_output_z.shape: {seasonal_output_z.shape}")
+        # print(f"seasonal_enc_output_x.shape: {seasonal_enc_output_x.shape}")
         # print(f"recon_output.shape: {recon_output.shape}")
         # raise
-        # 
+        #
+        seasonal_enc_output_x = seasonal_enc_output_x.permute(0, 2, 1) 
         seasonal_output_z = seasonal_output_z.permute(0, 2, 1)
-        seasonal_enc_output_x = seasonal_enc_output_x.permute(0, 2, 1)
         seasonal_output_x_z = torch.cat([seasonal_enc_output_x,seasonal_output_z],dim=1)
-        seasonal_output = self.Conv1d_Seasonal(seasonal_output_x_z)
-        seasonal_output = self.Linear_Seasonal(seasonal_output)
+        
+       
+        # seasonal_output = self.Conv1d_Seasonal(seasonal_output_x_z)
+        seasonal_output_1 = self.Conv1d_Seasonal_1(seasonal_output_x_z)
+        seasonal_output_2 = self.Conv1d_Seasonal_2(seasonal_output_1)
+        seasonal_output_3 = self.Conv1d_Seasonal_3(seasonal_output_2)
+        
+        seasonal_output = self.Linear_Seasonal(seasonal_output_3)
 
         if self.combination:
             states = (seasonal_output*(self.alpha)) + (trend_output*(1-self.alpha))

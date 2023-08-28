@@ -64,18 +64,19 @@ class Dataset_BIVA(Dataset):
         df_Q = df_Q[cols_Q + [self.target]]
         df_M = df_M.loc[self.start_M:self.end_M]
         df_Q = df_Q.loc[self.start_Q:self.end_Q]
-        df_Q = self.repeat_label_row(df=df_Q,pred_len=1,repeat=3)
-        # print(f"df_M.shape:{df_M.shape}, df_Q.shape:{df_Q.shape}")
+        df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
         
         num_train = int(len(df_M) * 0.80) 
         num_test = int(len(df_M) * 0.10)
         num_vali = len(df_M) - num_train - num_test
         border1s = [0, num_train - self.seq_len, len(df_M) - num_test - self.seq_len]
-        border2s = [num_train, num_train + num_vali, len(df_M)]
+        border2s = [num_train, num_train + num_vali, len(df_M) - (self.pred_len - 1)*3] # quart feq(3) * pred period 
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
-        self.border1_v = border1 * self.pred_len
-        self.border2_v = border2 * self.pred_len
+        border1_v = border1 * self.pred_len
+        border2_v = border2 * self.pred_len
+        # print(f"border1,border2:{border1},{border2}")
+        # print(f"border1_v,border2_v:{border1_v},{border2_v}")
         
         if self.set_type == 0:
             if self.features == 'M' or self.features == 'MS':
@@ -108,7 +109,7 @@ class Dataset_BIVA(Dataset):
             df_data_cols = df_data.columns
             df_data_index = df_data.index
             
-            train_data_t = df_data_t[border1s[0]:border2s[0]]
+            train_data_t = df_data_t[border1s[0]*self.pred_len:border2s[0]*self.pred_len]
             df_data_t_cols = df_data_t.columns
             df_data_t_index = df_data_t.index
             
@@ -153,9 +154,9 @@ class Dataset_BIVA(Dataset):
             data_stamp_t = df_stamp_t.values
 
         self.data_x = data[border1:border2]
-        self.data_y = data_t[border1:border2]
+        self.data_y = data_t[border1_v:border2_v]
         self.data_stamp = data_stamp[border1:border2]
-        self.data_stamp_t = data_stamp_t[border1:border2]
+        self.data_stamp_t = data_stamp_t[border1_v:border2_v]
 
     def __getitem__(self, index):
         s_begin = index
@@ -163,24 +164,11 @@ class Dataset_BIVA(Dataset):
         seq_x = self.data_x[s_begin:s_end]
         # set lag seq_x
         seq_x = self.set_lag_missing(seq_x, self.var_info,'M').values
-        
-        r_begin = s_begin
-        r_end = s_begin + self.seq_len
-        seq_y = self.data_y[r_end-1:r_end].values
-        
-        # if self.pred_len == 1:
-        # else:
-        #     # temp multi step prediction
-        #     df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
-        #     df_data_t = df_Q[[self.target]]
-        #     df_data_t_cols = df_data_t.columns
-        #     df_data_t_index = df_data_t.index
-        #     data_t = self.scaler_q.fit_transform(df_data_t.values)
-        #     data_t = pd.DataFrame(data_t,columns=df_data_t_cols, index=df_data_t_index)
-        #     self.data_y = data_t[self.border1_v:self.border2_v]
-        #     r_end = s_begin + self.seq_len*self.pred_len
-        #     seq_y = self.data_y[r_end-self.pred_len:r_end].values
-        
+
+        r_begin = s_begin * self.pred_len
+        r_end = r_begin + self.seq_len*self.pred_len
+        seq_y = self.data_y[r_end-self.pred_len:r_end].values
+
         # time feagure index       
         # seq_x_mark = self.data_stamp[s_begin:s_end].values
         # seq_y_mark = self.data_stamp_t[r_end-1:r_end].values
