@@ -64,10 +64,9 @@ class Dataset_BIVA(Dataset):
         df_Q = df_Q[cols_Q + [self.target]]
         df_M = df_M.loc[self.start_M:self.end_M]
         df_Q = df_Q.loc[self.start_Q:self.end_Q]
+        # temp Q_variable insert
         df_M = pd.concat([df_M,df_Q],axis=1)
-        print(f"df_M_cat_Q.shape: {df_M.shape}")
-        print(f"df_M_cat_Q: {df_M}")
-        raise
+
         df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
         
         num_train = int(len(df_M) * 0.80) 
