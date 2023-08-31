@@ -103,21 +103,15 @@ def load_data_timeindex(data_path):
 
 def set_lag_missing(df_trans, var_info, freq):
     df_set_lag = df_trans.copy()
-    if freq == 'M':
-      for col in df_trans.columns:
-        # print(f"set_lag_column : {col}")
-        lag = var_info[var_info['ID'] == col]['LAG'].values[0]
-        df_set = df_trans[col]
-        if lag > 0:
+    for col in df_trans.columns:
+      # print(f"set_lag_column : {col}")
+      lag = var_info[var_info['ID'] == col]['LAG'].values[0]
+      df_set = df_trans[col]
+      if lag > 0:
           df_set = df_set[:-(lag)]
-        else:
+      else:
           df_set = df_set
-        df_set_lag[col] = df_set
-      df_set_lag = df_set_lag
-    else:
-      df_set = df_trans
-      df_set_lag = df_set
-      df_set_lag = df_set_lag
+          df_set_lag[col] = df_set
     return df_set_lag
 
 def save_model(epoch, lr, model, model_dir, model_name='pems08', horizon=12):
