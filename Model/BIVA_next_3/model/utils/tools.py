@@ -108,7 +108,7 @@ def set_lag_missing(df_trans, var_info, freq):
       lag = var_info[var_info['ID'] == col]['LAG'].values[0]
       df_set = df_trans[col]
       if lag > 0:
-          df_set = df_set[:-(lag)]
+          df_set_lag[col] = df_set[:-(lag)]
       else:
           df_set = df_set
           df_set_lag[col] = df_set
