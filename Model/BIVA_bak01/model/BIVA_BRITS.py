@@ -1,5 +1,5 @@
 import os
-os.chdir('/content/SVU_SCT_FIN/Model/BIVA_next_3/model')
+os.chdir('/content/SVU_SCT_FIN/Model/BIVA/model')
 
 import torch.nn as nn
 import torch

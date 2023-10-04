@@ -58,15 +58,12 @@ class Dataset_BIVA(Dataset):
         path = os.path.join(self.root_path, self.data_path)
         df_Q, _, df_M, _, self.var_info = self.load_data_timeindex(path)
         
+        cols_M = list(df_M.columns)
         cols_Q = list(df_Q.columns)
         cols_Q.remove(self.target)
         df_Q = df_Q[cols_Q + [self.target]]
         df_M = df_M.loc[self.start_M:self.end_M]
         df_Q = df_Q.loc[self.start_Q:self.end_Q]
-        # temp Q_variable insert
-        df_M = pd.concat([df_M,df_Q],axis=1)
-        cols_M = list(df_M.columns)
-
         df_Q = self.repeat_label_row(df=df_Q,pred_len=self.pred_len,repeat=3)
         
         num_train = int(len(df_M) * 0.80) 
