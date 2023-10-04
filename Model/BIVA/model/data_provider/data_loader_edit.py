@@ -61,10 +61,8 @@ class Dataset_BIVA(Dataset):
         cols_Q = list(df_Q.columns)
         cols_Q.remove(self.target)
         df_Q = df_Q[cols_Q + [self.target]]
-        
         df_M = df_M.loc[self.start_M:self.end_M]
         df_Q = df_Q.loc[self.start_Q:self.end_Q]
-        
         # temp Q_variable insert
         df_M = pd.concat([df_M,df_Q],axis=1)
         cols_M = list(df_M.columns)
@@ -239,6 +237,8 @@ class Dataset_Pred(Dataset):
         
         border1 = len(df_M) - self.seq_len
         border2 = len(df_M)
+
+        
 
         if self.features == 'M' or self.features == 'MS':
             df_data = df_M[cols_M]
