@@ -209,6 +209,12 @@ class Dataset_Pred(Dataset):
         self.root_path = root_path
         self.data_path = data_path
 
+        self.period = {'M': ['2000-01','2023-06'], 'Q':['2000-01','2023-06']}
+        self.start_M = self.period['M'][0]
+        self.end_M = self.period['M'][1]
+        self.start_Q = self.period['Q'][0]
+        self.end_Q = self.period['Q'][1]
+
         self.load_data_timeindex = load_data_timeindex
         self.set_lag_missing = set_lag_missing
         self.repeat_label_row = repeat_label_row        
@@ -226,8 +232,8 @@ class Dataset_Pred(Dataset):
         cols_Q.remove(self.target)
         df_Q = df_Q[cols_Q + [self.target]]
         
-        df_M = df_M.loc[self.start_M:self.end_M]
-        df_Q = df_Q.loc[self.start_Q:self.end_Q]
+        df_M = df_M.loc[self.start_M:]
+        df_Q = df_Q.loc[self.start_Q:]
         
         # temp Q_variable insert
         df_M = pd.concat([df_M,df_Q],axis=1)
@@ -237,8 +243,6 @@ class Dataset_Pred(Dataset):
         
         border1 = len(df_M) - self.seq_len
         border2 = len(df_M)
-
-        
 
         if self.features == 'M' or self.features == 'MS':
             df_data = df_M[cols_M]
