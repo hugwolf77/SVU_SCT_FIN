@@ -16,7 +16,7 @@ This is a repository that studies time series and economic data models.
 
 Please understand that it has not been maintained yet.
 
-아직은 모델에 관한 연구와 개발을 혼자 진행하는 관계로 업데이트 진행이 느려지고 있습니다.
+논문작성 관계로 업데이트 진행이 미뤄졌습니다.
 활성화를 위해 노력하겠습니다.
 
 <!-- > [map] 2023.04.16
