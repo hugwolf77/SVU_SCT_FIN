@@ -19,6 +19,11 @@ Please understand that it has not been maintained yet.
 논문작성 관계로 업데이트 진행이 미뤄졌습니다.
 활성화를 위해 노력하겠습니다.
 
+공공데이터 조회에 대한 좋은 오픈소스가 있어서 예제 노트파일을 올려 두었습니다.
+관련 자료와 개발자분에 대한 링크는 노트파일에 표시하였습니다.
+
+감사합니다.
+
 <!-- > [map] 2023.04.16
 ![map](https://user-images.githubusercontent.com/94761022/235433957-d59c2415-2423-4d1c-a6d6-e380e19710b0.png) -->
 > [Repo_Map] 2023.07.17
