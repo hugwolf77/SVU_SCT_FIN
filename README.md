@@ -12,6 +12,8 @@ update: 2024. 01.11
 2) 시계열 데이터 분석 및 분석모델 구현 
 을 위하여 다음의 저장소로 통합하고 이곳은 폐쇄하고자 합니다.
 
+We're merging into the following repositories and closing this one.
+
 https://github.com/hugwolf77/SVU_industry_AI
 
 Kim Eui Cheol
