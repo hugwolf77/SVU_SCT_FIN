@@ -5,6 +5,15 @@ Convergence Technology Management & Smart City \
 SEOUL VENTURE UNIVERSITY](https://www.svu.ac.kr/department/department.php?catcode=10100000&prdcode=2212200002) \
 update: 2024. 01.11
 
+
+
+2024.05.09
+1) python 기초 및 데이터분석 기초교육  
+2) 시계열 데이터 분석 및 분석모델 구현 
+을 위하여 다음의 저장소로 통합하고 이곳은 폐쇄하고자 합니다.
+
+https://github.com/hugwolf77/SVU_industry_AI
+
 Kim Eui Cheol
 ###
 
