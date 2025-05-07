@@ -7,7 +7,6 @@ from utils.tools import EarlyStopping, adjust_learning_rate, visual, save_model,
 from data_provider.data_factory import data_provider
 from exp_basic import Exp_Basic
 from torch.utils.tensorboard import SummaryWriter
-# import pytorch_model_summary as pms
 # from torchinfo import summary
 from torch import optim
 import torch.nn as nn
@@ -62,21 +61,13 @@ class Exp_Main(Exp_Basic):
                 # batch_x_mark = batch_x_mark.float().to(self.device)
                 # batch_y_mark = batch_y_mark.float().to(self.device)
 
-                if self.args.use_amp:
-                    with torch.cuda.amp.autocast():
-                        if 'BIVA' in self.args.model:
-                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
-                        else:
-                            pass
-
+                if 'BIVA' in self.args.model:
+                    states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                 else:
-                    if 'BIVA' in self.args.model:
-                       states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
-                    else:
-                        pass
-
-                    f_dim = -1 if self.args.features == 'MS' else 0
-                    batch_y = batch_y[:, -self.args.pred_len:,f_dim:].to(self.device)
+                    pass
+                    
+                f_dim = -1 if self.args.features == 'MS' else 0
+                batch_y = batch_y[:, -self.args.pred_len:,f_dim:].to(self.device)
                 
                 #input = batch_x.detach().cpu()
                 imputed_loss = imputed_loss.detach().cpu()
@@ -92,7 +83,6 @@ class Exp_Main(Exp_Basic):
                 total_loss.append(loss.item())
 
         total_loss = np.average(total_loss)
-        self.model.train()
         return total_loss
 
     def train(self, setting):
@@ -136,59 +126,33 @@ class Exp_Main(Exp_Basic):
                 batch_y = batch_y.float().to(self.device)
                 # batch_x_mark = batch_x_mark.float().to(self.device)
                 # batch_y_mark = batch_y_mark.float().to(self.device)
-
-                if self.args.use_amp:
-                    with torch.cuda.amp.autocast():
-                        if 'BIVA' in self.args.model:
-                            states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
-                        else:
-                            pass
-
-                        f_dim = -1 if self.args.features == 'MS' else 0
-                        batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-
-                        # loss_recon = criterion(recon_output,imputed)
-                        loss_states = criterion(states,batch_y)
-                        loss = VAE_loss + imputed_loss + loss_states
-                        # loss = (loss_recon*self.args.recon_loss_w) + (imputed_loss*self.args.imputed_loss_w) + (loss_states*self.args.state_loss_w)
-
-                        train_loss.append(loss.item())
-
+                if 'BIVA' in self.args.model:
+                    states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
                 else:
-                    if 'BIVA' in self.args.model:
-                        states, VAE_loss, recon_output, seasonal_init, imputed_loss, imputed_x = self.model(batch_x)
+                    pass
 
-                    else:
-                        pass
+                f_dim = -1 if self.args.features == 'MS' else 0
+                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                    f_dim = -1 if self.args.features == 'MS' else 0
-                    batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                # loss_recon = criterion(recon_output,imputed)
+                loss_states = criterion(states,batch_y)
+                loss = VAE_loss + imputed_loss + loss_states
+                # loss = (loss_recon*self.args.recon_loss_w) + (imputed_loss*self.args.imputed_loss_w) + (loss_states*self.args.state_loss_w)
 
-                    # loss_recon = criterion(recon_output,imputed)
-                    loss_states = criterion(states,batch_y)
-                    loss = VAE_loss + imputed_loss + loss_states
-                    
-                    # state_loss.append(loss_states.item())
-                    train_loss.append(loss.item())
+                train_loss.append(loss.item())
 
                 if (i + 1) % 10 == 0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f} ".format(
                         i + 1, epoch + 1, loss.item()))
                     speed = (time.time() - time_now) / iter_count
-                    left_time = speed * \
-                        ((self.args.train_epochs - epoch) * train_steps - i)
+                    left_time = speed * ((self.args.train_epochs - epoch) * train_steps - i)
                     print(
                         '\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
                     iter_count = 0
                     time_now = time.time()
 
-                if self.args.use_amp:
-                    scaler.scale(loss).backward()
-                    scaler.step(model_optim)
-                    scaler.update()
-                else:
-                    loss.backward()
-                    model_optim.step()
+                loss.backward()
+                model_optim.step()
 
             print("Epoch: {} cost time: {}".format(
                 epoch + 1, time.time() - epoch_time))
