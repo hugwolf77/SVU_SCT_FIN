@@ -164,7 +164,7 @@ class Exp_Main(Exp_Basic):
             torch.save(self.model.state_dict(), path + self.args.model_id +'_last_checkpoint.pth')
             
             # loss save
-            save_path = '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_result/' + self.args.model_id + '/'
+            save_path = '/home/augustine77/mylab/sim/sim/05_SVU_SCT_FIN/Model/BIVA/exp/(BIVA)_result/' + self.args.model_id + '/'
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
 
@@ -214,7 +214,7 @@ class Exp_Main(Exp_Basic):
         imputation = []
         inputx = []
         # './test_results/' + setting + '/'
-        folder_path = '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_plot/' + self.args.model_id + '/'
+        folder_path = '/home/augustine77/mylab/sim/sim/05_SVU_SCT_FIN/Model/BIVA/exp/(BIVA)_plot/' + self.args.model_id + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -288,7 +288,7 @@ class Exp_Main(Exp_Basic):
         # y_mark = y_mark.reshape(-1, y_mark.shape[-2], y_mark.shape[-1])
 
         # result save
-        save_path = '/content/drive/MyDrive/ZZ/Code_02/exp/(BIVA)_result/' + self.args.model_id + '/'
+        save_path = '/home/augustine77/mylab/sim/sim/05_SVU_SCT_FIN/Model/BIVA/exp/(BIVA)_result/' + self.args.model_id + '/'
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
@@ -301,8 +301,8 @@ class Exp_Main(Exp_Basic):
         f.write('\n')
         f.close()
 
-        np.save(save_path + 'BIVA_metrics.npy',
-                np.array([mae, mse, rmse, mape, mspe, rse, corr]))
+        # np.save(save_path + 'BIVA_metrics.npy',
+        #         np.array([mae, mse, rmse, mape, mspe, rse, corr]))
         np.save(save_path + 'BIVA_pred.npy', preds)
         np.save(save_path + 'BIVA_trues.npy', trues)
         np.save(save_path + 'BIVA_recons.npy',recon_xs)
@@ -355,7 +355,7 @@ class Exp_Main(Exp_Basic):
         imputation = imputation.reshape(-1, imputation.shape[-2], imputation.shape[-1])
 
         # result save
-        folder_path = '/content/drive/MyDrive/ZZ/Code_02/result/(BIVA)_predict/' + self.args.model_id + '/'
+        folder_path = '/home/augustine77/mylab/sim/sim/05_SVU_SCT_FIN/Model/BIVA/exp/(BIVA)_predict/' + self.args.model_id + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
