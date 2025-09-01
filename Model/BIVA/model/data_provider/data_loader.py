@@ -38,7 +38,7 @@ class Dataset_BIVA(Dataset):
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
-        self.period = {'M': ['2000-01','2023-06'], 'Q':['2000-01','2023-06']}
+        self.period = {'M': ['2000-01','2025-06'], 'Q':['2000-01','2025-06']}
         self.start_M = self.period['M'][0]
         self.end_M = self.period['M'][1]
         self.start_Q = self.period['Q'][0]
@@ -56,7 +56,8 @@ class Dataset_BIVA(Dataset):
         # self.scaler_q = MinMaxScaler()
         
         path = os.path.join(self.root_path, self.data_path)
-        df_Q, _, df_M, _, self.var_info = self.load_data_timeindex(path)
+        # df_Q, _, df_M, _, self.var_info = self.load_data_timeindex(path)
+        df_Q, df_M, self.var_info = self.load_data_timeindex(path)
         
         cols_Q = list(df_Q.columns)
         cols_Q.remove(self.target)
@@ -228,7 +229,8 @@ class Dataset_Pred(Dataset):
         # self.scaler_q = MinMaxScaler()
         
         path = os.path.join(self.root_path, self.data_path)
-        df_Q, _, df_M, _, self.var_info = self.load_data_timeindex(path)
+        # df_Q, _, df_M, _, self.var_info = self.load_data_timeindex(path)
+        df_Q, df_M, self.var_info = self.load_data_timeindex(path)
         
         cols_Q = list(df_Q.columns)
         cols_Q.remove(self.target)
@@ -310,7 +312,7 @@ class Dataset_Pred(Dataset):
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
     def __len__(self):
-        return len(self.data_x) - self.seq_len + 1
+        return len(self.data_x) - self.seq_len
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)

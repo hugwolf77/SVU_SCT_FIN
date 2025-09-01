@@ -96,9 +96,10 @@ def load_data_timeindex(data_path):
     # Variable Info
     var_info = pd.read_excel(data_path, sheet_name='df_var_info', header=0)
     # diff transform for stationary
-    df_Q_trans = transform_adf(df_Q, var_info)
-    df_M_trans = transform_adf(df_M, var_info)
-    return df_Q, df_Q_trans, df_M, df_M_trans, var_info
+    # df_Q_trans = transform_adf(df_Q, var_info)
+    # df_M_trans = transform_adf(df_M, var_info)
+    # return df_Q, df_Q_trans, df_M, df_M_trans, var_info
+    return df_Q, df_M, var_info
 
 
 def set_lag_missing(df_trans, var_info, freq):

@@ -78,6 +78,8 @@ class Exp_Main(Exp_Basic):
                 
                 # calc loss
                 # loss_recon = criterion(recon,imputed)
+                # print(f"states.shape : {pred.shape}")
+                # print(f"true.shape : {true.shape}")
                 loss_states = criterion(pred,true)
                 loss = VAE_loss + imputed_loss + loss_states
                 total_loss.append(loss.item())
